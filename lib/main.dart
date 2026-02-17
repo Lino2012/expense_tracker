@@ -14,13 +14,23 @@ import 'models/user.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Initialize Hive for local storage
+  // Initialize Hive
   final appDocumentDir = await getApplicationDocumentsDirectory();
-  Hive.init(appDocumentDir.path);
+  await Hive.initFlutter(appDocumentDir.path);
   
-  // Register adapters
-  Hive.registerAdapter(UserAdapter());
-  Hive.registerAdapter(TransactionAdapter());
+  // Register adapters - MUST be done before opening boxes
+  if (!Hive.isAdapterRegistered(0)) {
+    Hive.registerAdapter(UserAdapter());
+  }
+  if (!Hive.isAdapterRegistered(1)) {
+    Hive.registerAdapter(TransactionAdapter());
+  }
+  if (!Hive.isAdapterRegistered(2)) {
+    Hive.registerAdapter(TransactionTypeAdapter());
+  }
+  if (!Hive.isAdapterRegistered(3)) {
+    Hive.registerAdapter(CategoryAdapter());
+  }
   
   // Open boxes
   await Hive.openBox<User>('users');
