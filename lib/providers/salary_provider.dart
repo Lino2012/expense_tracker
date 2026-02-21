@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SalaryProvider extends ChangeNotifier {
   double? _monthlySalary;
@@ -11,14 +11,14 @@ class SalaryProvider extends ChangeNotifier {
   }
 
   Future<void> loadSalary() async {
-    final settingsBox = await Hive.openBox('settings');
-    _monthlySalary = settingsBox.get('monthlySalary');
+    final prefs = await SharedPreferences.getInstance();
+    _monthlySalary = prefs.getDouble('monthly_salary');
     notifyListeners();
   }
 
   Future<void> setMonthlySalary(double salary) async {
-    final settingsBox = await Hive.openBox('settings');
-    await settingsBox.put('monthlySalary', salary);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble('monthly_salary', salary);
     _monthlySalary = salary;
     notifyListeners();
   }

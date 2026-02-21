@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import '../../providers/salary_provider.dart';
 import '../../providers/transaction_provider.dart';
-import '../../models/user.dart';
+import '../../models/app_models.dart';
 
 class SalarySetupScreen extends StatefulWidget {
   const SalarySetupScreen({super.key});

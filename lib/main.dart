@@ -1,41 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:hive_flutter/hive_flutter.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'providers/auth_provider.dart';
 import 'providers/transaction_provider.dart';
+import 'providers/currency_provider.dart';
 import 'providers/salary_provider.dart';
+import 'providers/theme_provider.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/signup_screen.dart';
 import 'screens/onboarding/salary_setup_screen.dart';
 import 'screens/dashboard/main_dashboard_screen.dart';
-import 'models/user.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Initialize Hive
-  final appDocumentDir = await getApplicationDocumentsDirectory();
-  await Hive.initFlutter(appDocumentDir.path);
-  
-  // Register adapters - MUST be done before opening boxes
-  if (!Hive.isAdapterRegistered(0)) {
-    Hive.registerAdapter(UserAdapter());
-  }
-  if (!Hive.isAdapterRegistered(1)) {
-    Hive.registerAdapter(TransactionAdapter());
-  }
-  if (!Hive.isAdapterRegistered(2)) {
-    Hive.registerAdapter(TransactionTypeAdapter());
-  }
-  if (!Hive.isAdapterRegistered(3)) {
-    Hive.registerAdapter(CategoryAdapter());
-  }
-  
-  // Open boxes
-  await Hive.openBox<User>('users');
-  await Hive.openBox<Transaction>('transactions');
-  await Hive.openBox('settings');
+  // Initialize SharedPreferences
+  await SharedPreferences.getInstance();
   
   runApp(const MyApp());
 }
@@ -46,70 +26,167 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
-        ChangeNotifierProvider(create: (_) => TransactionProvider()),
-        ChangeNotifierProvider(create: (_) => SalaryProvider()),
-      ],
-      child: MaterialApp(
-        title: 'Expense Tracker',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          useMaterial3: true,
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: const Color(0xFF10B981),
-            brightness: Brightness.dark,
-          ).copyWith(
-            surface: const Color(0xFF1E293B),
-            onSurface: Colors.white,
-          ),
-          scaffoldBackgroundColor: const Color(0xFF0F172A),
-          cardTheme: const CardThemeData(
-            color: Color(0xFF1E293B),
-            elevation: 0,
-          ),
-          appBarTheme: const AppBarTheme(
-            backgroundColor: Color(0xFF0F172A),
-            elevation: 0,
-            centerTitle: false,
-          ),
-          floatingActionButtonTheme: const FloatingActionButtonThemeData(
-            backgroundColor: Color(0xFF10B981),
-            foregroundColor: Colors.white,
-          ),
-          inputDecorationTheme: InputDecorationTheme(
-            filled: true,
-            fillColor: const Color(0xFF1E293B),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide.none,
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide.none,
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFF10B981), width: 2),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFEF4444), width: 2),
-            ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          ),
-        ),
-        home: const AuthWrapper(),
-        routes: {
-          '/login': (context) => const LoginScreen(),
-          '/signup': (context) => const SignupScreen(),
-          '/salary-setup': (context) => const SalarySetupScreen(),
-          '/dashboard': (context) => const MainDashboardScreen(),
+  providers: [
+    ChangeNotifierProvider(create: (_) => AuthProvider()),
+    ChangeNotifierProvider(create: (_) => TransactionProvider()),
+    ChangeNotifierProvider(create: (_) => SalaryProvider()),
+    ChangeNotifierProvider(create: (_) => ThemeProvider()),
+    ChangeNotifierProvider(create: (_) => CurrencyProvider()), // Add this
+  ],
+  child: Consumer<ThemeProvider>(
+        builder: (context, themeProvider, child) {
+          return MaterialApp(
+            title: 'Expense Tracker',
+            debugShowCheckedModeBanner: false,
+            theme: _buildLightTheme(),
+            darkTheme: _buildOriginalDarkTheme(),
+            themeMode: themeProvider.themeMode,
+            home: const AuthWrapper(),
+            routes: {
+              '/login': (context) => const LoginScreen(),
+              '/signup': (context) => const SignupScreen(),
+              '/salary-setup': (context) => const SalarySetupScreen(),
+              '/dashboard': (context) => const MainDashboardScreen(),
+            },
+          );
         },
       ),
     );
   }
+
+  ThemeData _buildOriginalDarkTheme() {
+    final colorScheme = ColorScheme.fromSeed(
+      seedColor: const Color(0xFF10B981),
+      brightness: Brightness.dark,
+    ).copyWith(
+      primary: const Color(0xFF10B981),
+      secondary: const Color(0xFF34D399),
+      tertiary: const Color(0xFF6EE7B7),
+      error: const Color(0xFFEF4444),
+      surface: const Color(0xFF1E293B),
+      onSurface: Colors.white,
+    );
+
+    return ThemeData(
+      useMaterial3: true,
+      colorScheme: colorScheme,
+      scaffoldBackgroundColor: const Color(0xFF0F172A),
+      cardTheme: CardThemeData(
+        color: const Color(0xFF1E293B),
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+      ),
+      appBarTheme: const AppBarTheme(
+        backgroundColor: Color(0xFF0F172A),
+        elevation: 0,
+        centerTitle: false,
+      ),
+      floatingActionButtonTheme: const FloatingActionButtonThemeData(
+        backgroundColor: Color(0xFF10B981),
+        foregroundColor: Colors.white,
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: const Color(0xFF1E293B),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFF10B981), width: 2),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFFEF4444), width: 2),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      ),
+    );
+  }
+
+  ThemeData _buildLightTheme() {
+  final colorScheme = ColorScheme.fromSeed(
+    seedColor: const Color(0xFF10B981),
+    brightness: Brightness.light,
+  ).copyWith(
+    surface: Colors.white,
+    onSurface: Colors.black87,  // Dark text for light background
+    surfaceContainerHighest: Colors.grey.shade100,
+    primary: const Color(0xFF10B981),
+    secondary: const Color(0xFF059669),
+    error: const Color(0xFFDC2626),
+  );
+
+  return ThemeData(
+    useMaterial3: true,
+    colorScheme: colorScheme,
+    scaffoldBackgroundColor: Colors.grey.shade50,
+    cardTheme: CardThemeData(
+      color: Colors.white,
+      elevation: 2,
+      shadowColor: Colors.black.withValues(alpha: 0.1),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+    ),
+    appBarTheme: const AppBarTheme(
+      backgroundColor: Colors.white,
+      foregroundColor: Colors.black87,
+      elevation: 0,
+      centerTitle: false,
+      titleTextStyle: TextStyle(
+        color: Colors.black87,
+        fontSize: 20,
+        fontWeight: FontWeight.w600,
+      ),
+      iconTheme: IconThemeData(
+        color: Colors.black87,
+      ),
+    ),
+    floatingActionButtonTheme: const FloatingActionButtonThemeData(
+      backgroundColor: Color(0xFF10B981),
+      foregroundColor: Colors.white,
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: Colors.grey.shade100,
+      labelStyle: TextStyle(color: Colors.grey.shade700),
+      hintStyle: TextStyle(color: Colors.grey.shade500),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFF10B981), width: 2),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFDC2626), width: 2),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+    ),
+    textTheme: const TextTheme(
+      headlineMedium: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
+      bodyLarge: TextStyle(color: Colors.black87),
+      bodyMedium: TextStyle(color: Colors.black54),
+      titleLarge: TextStyle(color: Colors.black87, fontWeight: FontWeight.w600),
+    ),
+  );
 }
+
+  }
 
 class AuthWrapper extends StatelessWidget {
   const AuthWrapper({super.key});

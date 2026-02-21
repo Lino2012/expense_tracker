@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../providers/auth_provider.dart';
+import '../../providers/auth_provider.dart';  
+import '../../providers/transaction_provider.dart';
 import '../../widgets/custom_text_field.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -40,27 +41,30 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
   }
 
   void _handleLogin() async {
-    if (_formKey.currentState!.validate()) {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final success = await authProvider.login(
-        _emailController.text.trim(),
-        _passwordController.text,
-      );
+  if (_formKey.currentState!.validate()) {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final transactionProvider = Provider.of<TransactionProvider>(context, listen: false);
+    
+    final success = await authProvider.login(
+      _emailController.text.trim(),
+      _passwordController.text,
+      transactionProvider, // Pass transaction provider
+    );
 
-      if (success && mounted) {
-        // Navigate will be handled by AuthWrapper
-      } else if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(authProvider.error ?? 'Login failed'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          ),
-        );
-      }
+    if (success && mounted) {
+      // Navigate will be handled by AuthWrapper
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(authProvider.error ?? 'Login failed'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+      );
     }
   }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -83,7 +87,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                     width: 100,
                     height: 100,
                     decoration: BoxDecoration(
-                      color: colorScheme.primary.withValues(alpha: 0.9),
+                      color: colorScheme.primary.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
@@ -95,17 +99,14 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                   const SizedBox(height: 24),
                   Text(
                     'Welcome Back!',
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 8),
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+),
+                    textAlign: TextAlign.center),
                   Text(
                     'Sign in to continue',
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: Colors.white70,
+                          color: Colors.white.withValues(alpha: 0.7),
                         ),
                     textAlign: TextAlign.center,
                   ),
@@ -207,9 +208,9 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        "Don't have an account? ",
-                        style: TextStyle(color: Colors.white70),
-                      ),
+  "Don't have an account? ",
+  style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
+),
                       TextButton(
                         onPressed: () {
                           Navigator.pushReplacementNamed(context, '/signup');

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart';
 import '../../providers/transaction_provider.dart';
 import '../../providers/salary_provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/theme_provider.dart';
+import '../../providers/currency_provider.dart'; // Add this import
+import '../../widgets/currency_selector.dart'; // Add this import
 import '../../widgets/transaction_tile.dart';
 import '../../widgets/empty_state.dart';
 import '../analytics/yearly_analytics_screen.dart';
@@ -40,25 +42,34 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
     super.dispose();
   }
 
-  String _formatCurrency(double amount) {
-    final formatter = NumberFormat.currency(
-      locale: 'en_PH',
-      symbol: '₱',
-      decimalDigits: 2,
-    );
-    return formatter.format(amount);
-  }
-
   @override
   Widget build(BuildContext context) {
     final transactionProvider = Provider.of<TransactionProvider>(context);
     final salaryProvider = Provider.of<SalaryProvider>(context);
+    final currencyProvider = Provider.of<CurrencyProvider>(context); // Add this
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Dashboard'),
         actions: [
+          const CurrencySelector(), // Now this works
+          Consumer<ThemeProvider>(
+            builder: (context, themeProvider, child) {
+              return IconButton(
+                icon: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  child: Icon(
+                    themeProvider.isDarkMode ? Icons.light_mode : Icons.dark_mode,
+                    key: ValueKey(themeProvider.isDarkMode),
+                  ),
+                ),
+                onPressed: () {
+                  themeProvider.toggleTheme();
+                },
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.bar_chart),
             onPressed: () {
@@ -73,7 +84,9 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () {
-              Provider.of<AuthProvider>(context, listen: false).logout();
+              final authProvider = Provider.of<AuthProvider>(context, listen: false);
+              final transactionProvider = Provider.of<TransactionProvider>(context, listen: false);
+              authProvider.logout(transactionProvider); // Now passing the required argument
             },
           ),
         ],
@@ -123,7 +136,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              _formatCurrency(transactionProvider.balance),
+                              currencyProvider.formatAmount(transactionProvider.balance), // Updated
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 40,
@@ -146,7 +159,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
-                                        _formatCurrency(salaryProvider.monthlySalary ?? 0),
+                                        currencyProvider.formatAmount(salaryProvider.monthlySalary ?? 0), // Updated
                                         style: const TextStyle(
                                           color: Colors.white,
                                           fontSize: 20,
@@ -170,12 +183,14 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
                                         'Income',
                                         transactionProvider.totalIncome,
                                         Colors.green,
+                                        currencyProvider,
                                       ),
                                       _buildBalanceColumn(
                                         context,
                                         'Expense',
                                         transactionProvider.totalExpense,
                                         Colors.red,
+                                        currencyProvider,
                                       ),
                                     ],
                                   ),
@@ -209,7 +224,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
             ),
             
             if (transactionProvider.transactions.isEmpty)
-              SliverFillRemaining(
+              const SliverFillRemaining(
                 child: EmptyState(
                   message: 'No transactions yet\nTap + to add your first transaction',
                   icon: Icons.receipt_long,
@@ -251,7 +266,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
     );
   }
 
-  Widget _buildBalanceColumn(BuildContext context, String label, double amount, Color color) {
+  Widget _buildBalanceColumn(BuildContext context, String label, double amount, Color color, CurrencyProvider currencyProvider) {
     return Column(
       children: [
         Text(
@@ -263,11 +278,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
         ),
         const SizedBox(height: 4),
         Text(
-          NumberFormat.currency(
-            locale: 'en_PH',
-            symbol: '₱',
-            decimalDigits: 2,
-          ).format(amount),
+          currencyProvider.formatAmount(amount),
           style: TextStyle(
             color: color,
             fontSize: 18,

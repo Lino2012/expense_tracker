@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../providers/auth_provider.dart';
+import '../../providers/auth_provider.dart';  // This import is correct
 import '../../widgets/custom_text_field.dart';
 import '../../services/validation_service.dart';
+import '../../providers/transaction_provider.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -59,29 +60,31 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
   }
 
   void _handleSignup() async {
-    if (_formKey.currentState!.validate()) {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final success = await authProvider.signup(
-        _fullNameController.text.trim(),
-        _emailController.text.trim(),
-        _passwordController.text,
-      );
+  if (_formKey.currentState!.validate()) {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final transactionProvider = Provider.of<TransactionProvider>(context, listen: false);
+    
+    final success = await authProvider.signup(
+      _fullNameController.text.trim(),
+      _emailController.text.trim(),
+      _passwordController.text,
+      transactionProvider, // Pass transaction provider
+    );
 
-      if (success && mounted) {
-        Navigator.pushReplacementNamed(context, '/salary-setup');
-      } else if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(authProvider.error ?? 'Signup failed'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          ),
-        );
-      }
+    if (success && mounted) {
+      Navigator.pushReplacementNamed(context, '/salary-setup');
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(authProvider.error ?? 'Signup failed'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+      );
     }
   }
-
+}
   Color _getStrengthColor() {
     if (_passwordStrength < 0.3) return Colors.red;
     if (_passwordStrength < 0.6) return Colors.orange;
@@ -277,7 +280,7 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(
+                      const Text(
                         'Already have an account? ',
                         style: TextStyle(color: Colors.white70),
                       ),
