@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../providers/auth_provider.dart';  // This import is correct
+import '../../providers/auth_provider.dart';
+import '../../providers/theme_provider.dart'; // Add this import
+import '../../providers/transaction_provider.dart';
 import '../../widgets/custom_text_field.dart';
 import '../../services/validation_service.dart';
-import '../../providers/transaction_provider.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -18,11 +19,11 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  
+
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   double _passwordStrength = 0.0;
-  
+
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
@@ -37,7 +38,7 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
     _animationController.forward();
-    
+
     _passwordController.addListener(_updatePasswordStrength);
   }
 
@@ -60,31 +61,32 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
   }
 
   void _handleSignup() async {
-  if (_formKey.currentState!.validate()) {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final transactionProvider = Provider.of<TransactionProvider>(context, listen: false);
-    
-    final success = await authProvider.signup(
-      _fullNameController.text.trim(),
-      _emailController.text.trim(),
-      _passwordController.text,
-      transactionProvider, // Pass transaction provider
-    );
+    if (_formKey.currentState!.validate()) {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final transactionProvider = Provider.of<TransactionProvider>(context, listen: false);
 
-    if (success && mounted) {
-      Navigator.pushReplacementNamed(context, '/salary-setup');
-    } else if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(authProvider.error ?? 'Signup failed'),
-          backgroundColor: Theme.of(context).colorScheme.error,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        ),
+      final success = await authProvider.signup(
+        _fullNameController.text.trim(),
+        _emailController.text.trim(),
+        _passwordController.text,
+        transactionProvider,
       );
+
+      if (success && mounted) {
+        Navigator.pushReplacementNamed(context, '/salary-setup');
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(authProvider.error ?? 'Signup failed'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+        );
+      }
     }
   }
-}
+
   Color _getStrengthColor() {
     if (_passwordStrength < 0.3) return Colors.red;
     if (_passwordStrength < 0.6) return Colors.orange;
@@ -105,6 +107,30 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        actions: [
+          // Theme toggle button
+          Consumer<ThemeProvider>(
+            builder: (context, themeProvider, child) {
+              return IconButton(
+                icon: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  child: Icon(
+                    themeProvider.isDarkMode ? Icons.light_mode : Icons.dark_mode,
+                    key: ValueKey(themeProvider.isDarkMode),
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+                onPressed: () {
+                  themeProvider.toggleTheme();
+                },
+              );
+            },
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -119,17 +145,17 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
                   Text(
                     'Create Account',
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.onSurface,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'Sign up to get started',
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: Colors.white70,
-                        ),
+                      color: colorScheme.onSurface.withValues(alpha: 0.7),
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 48),
@@ -175,7 +201,7 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
                           suffixIcon: IconButton(
                             icon: Icon(
                               _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                              color: Colors.white70,
+                              color: colorScheme.onSurface.withValues(alpha: 0.7),
                             ),
                             onPressed: () {
                               setState(() {
@@ -226,7 +252,7 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
                           suffixIcon: IconButton(
                             icon: Icon(
                               _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
-                              color: Colors.white70,
+                              color: colorScheme.onSurface.withValues(alpha: 0.7),
                             ),
                             onPressed: () {
                               setState(() {
@@ -262,17 +288,17 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
                     ),
                     child: authProvider.isLoading
                         ? const SizedBox(
-                            height: 24,
-                            width: 24,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                            ),
-                          )
+                      height: 24,
+                      width: 24,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
                         : const Text(
-                            'Create Account',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                          ),
+                      'Create Account',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
                   ),
                   const SizedBox(height: 16),
 
@@ -280,9 +306,9 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text(
+                      Text(
                         'Already have an account? ',
-                        style: TextStyle(color: Colors.white70),
+                        style: TextStyle(color: colorScheme.onSurface.withValues(alpha: 0.7)),
                       ),
                       TextButton(
                         onPressed: () {
