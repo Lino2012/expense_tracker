@@ -7,7 +7,8 @@ import '../../providers/currency_provider.dart';
 import '../../models/app_models.dart';
 import '../../widgets/charts/enhanced_monthly_chart.dart';
 import '../../widgets/charts/weekly_expandable_chart.dart';
-import '../../widgets/currency_selector.dart'; // Add this import
+import '../../widgets/charts/mini_pie_chart.dart';
+import '../../widgets/currency_selector.dart';
 
 class YearlyAnalyticsScreen extends StatefulWidget {
   const YearlyAnalyticsScreen({super.key});
@@ -47,6 +48,7 @@ class _YearlyAnalyticsScreenState extends State<YearlyAnalyticsScreen> with Sing
     final highestExpenseMonthName = transactionProvider.getHighestExpenseMonthName(_selectedYear);
     final monthlyExpenses = transactionProvider.getMonthlyExpenses(_selectedYear);
     final monthlyIncomes = transactionProvider.getMonthlyIncome(_selectedYear);
+    final categoryData = transactionProvider.getCategoryBreakdown(_selectedYear, null);
     
     // Check if there's any data
     final hasData = yearlyIncome > 0 || yearlyExpense > 0;
@@ -91,7 +93,9 @@ class _YearlyAnalyticsScreenState extends State<YearlyAnalyticsScreen> with Sing
             monthlyAverage,
             highestExpenseMonth,
             highestExpenseMonthName,
+            categoryData,
             currencyProvider,
+            transactionProvider,
           ),
 
           // Monthly Breakdown Tab
@@ -104,11 +108,11 @@ class _YearlyAnalyticsScreenState extends State<YearlyAnalyticsScreen> with Sing
             currencyProvider,
           ),
 
-          // Categories Tab - Fix: Pass the correct provider
+          // Categories Tab
           _buildCategoriesTab(
             context,
             hasData,
-            transactionProvider, // This is the correct parameter name
+            transactionProvider,
             currencyProvider,
           ),
         ],
@@ -125,7 +129,9 @@ class _YearlyAnalyticsScreenState extends State<YearlyAnalyticsScreen> with Sing
     double monthlyAverage,
     double highestExpenseMonth,
     String highestExpenseMonthName,
+    Map<String, double> categoryData,
     CurrencyProvider currencyProvider,
+    TransactionProvider transactionProvider,
   ) {
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -224,43 +230,107 @@ class _YearlyAnalyticsScreenState extends State<YearlyAnalyticsScreen> with Sing
                   mainAxisSpacing: 16,
                   childAspectRatio: 1.2,
                   children: [
-                    _buildSummaryCard(
+                    _buildEnhancedSummaryCard(
                       context,
                       'Total Income',
                       yearlyIncome,
                       Colors.green,
                       Icons.trending_up,
                       currencyProvider,
+                      '↑ ${((yearlyIncome / (yearlyIncome + yearlyExpense)) * 100).toStringAsFixed(1)}% of total',
                     ),
-                    _buildSummaryCard(
+                    _buildEnhancedSummaryCard(
                       context,
                       'Total Expense',
                       yearlyExpense,
                       Colors.red,
                       Icons.trending_down,
                       currencyProvider,
+                      '↓ ${((yearlyExpense / (yearlyIncome + yearlyExpense)) * 100).toStringAsFixed(1)}% of total',
                     ),
-                    _buildSummaryCard(
+                    _buildEnhancedSummaryCard(
                       context,
                       'Total Savings',
                       yearlySavings,
                       Colors.blue,
                       Icons.savings,
                       currencyProvider,
+                      '${((yearlySavings / yearlyIncome) * 100).toStringAsFixed(1)}% saved',
                     ),
-                    _buildSummaryCard(
+                    _buildEnhancedSummaryCard(
                       context,
                       'Monthly Avg',
                       monthlyAverage,
                       Colors.orange,
                       Icons.calendar_month,
                       currencyProvider,
+                      '${transactionProvider.transactions.length} transactions',
                     ),
                   ],
                 ),
                 const SizedBox(height: 24),
 
-                // Additional Stats
+                // Category Preview Card with Mini Pie Chart
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Spending Categories',
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                _tabController.animateTo(2); // Switch to categories tab
+                              },
+                              child: const Text('View All'),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            // Mini Pie Chart
+                            Expanded(
+                              flex: 2,
+                              child: MiniPieChart(
+                                data: categoryData,
+                                size: 120,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            // Top 3 Categories
+                            Expanded(
+                              flex: 3,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Top Categories',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  ..._buildTopCategories(categoryData, yearlyExpense),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Additional Stats Card
                 Card(
                   child: Padding(
                     padding: const EdgeInsets.all(16),
@@ -271,7 +341,7 @@ class _YearlyAnalyticsScreenState extends State<YearlyAnalyticsScreen> with Sing
                             Expanded(
                               child: _buildStatItem(
                                 context,
-                                'Highest Expense Month',
+                                'Highest Month',
                                 highestExpenseMonthName,
                                 currencyProvider.formatAmount(highestExpenseMonth),
                                 Icons.arrow_upward,
@@ -286,21 +356,24 @@ class _YearlyAnalyticsScreenState extends State<YearlyAnalyticsScreen> with Sing
                             Expanded(
                               child: _buildStatItem(
                                 context,
-                                'Savings Rate',
-                                '${((yearlySavings / yearlyIncome) * 100).toStringAsFixed(1)}%',
-                                'of income',
-                                Icons.percent,
-                                Colors.blue,
+                                'Transaction Count',
+                                transactionProvider.transactions
+                                    .where((t) => t.date.year == _selectedYear)
+                                    .length
+                                    .toString(),
+                                'total',
+                                Icons.receipt,
+                                Colors.purple,
                               ),
                             ),
                             Expanded(
                               child: _buildStatItem(
                                 context,
-                                'Transaction Count',
-                                _getTransactionCount().toString(),
-                                'total',
-                                Icons.receipt,
-                                Colors.purple,
+                                'Categories Used',
+                                categoryData.length.toString(),
+                                'of 8',
+                                Icons.category,
+                                Colors.teal,
                               ),
                             ),
                           ],
@@ -316,11 +389,114 @@ class _YearlyAnalyticsScreenState extends State<YearlyAnalyticsScreen> with Sing
     );
   }
 
-  int _getTransactionCount() {
-    final transactionProvider = Provider.of<TransactionProvider>(context, listen: false);
-    return transactionProvider.transactions
-        .where((t) => t.date.year == _selectedYear)
-        .length;
+  // Helper method to build top categories
+  List<Widget> _buildTopCategories(Map<String, double> categoryData, double totalExpense) {
+    final sortedEntries = categoryData.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    
+    return sortedEntries.take(3).map((entry) {
+      final category = Category.values.firstWhere(
+        (c) => c.displayName == entry.key,
+        orElse: () => Category.other,
+      );
+      final percentage = (entry.value / totalExpense) * 100;
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: Row(
+          children: [
+            Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: category.color,
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                entry.key,
+                style: const TextStyle(fontSize: 12),
+              ),
+            ),
+            Text(
+              '${percentage.toStringAsFixed(1)}%',
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      );
+    }).toList();
+  }
+
+  Widget _buildEnhancedSummaryCard(
+    BuildContext context,
+    String label,
+    double amount,
+    Color color,
+    IconData icon,
+    CurrencyProvider currencyProvider,
+    String subtitle,
+  ) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 12,
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    icon,
+                    color: color,
+                    size: 16,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                currencyProvider.formatAmount(amount),
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              subtitle,
+              style: TextStyle(
+                fontSize: 11,
+                color: colorScheme.onSurface.withValues(alpha: 0.5),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildMonthlyTab(
@@ -411,10 +587,25 @@ class _YearlyAnalyticsScreenState extends State<YearlyAnalyticsScreen> with Sing
                 Card(
                   child: Padding(
                     padding: const EdgeInsets.all(16),
-                    child: EnhancedMonthlyChart(
-                      expenses: monthlyExpenses,
-                      incomes: monthlyIncomes,
-                      year: _selectedYear,
+                    child: Column(
+                      children: [
+                        const Text(
+                          'Monthly Overview',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          height: 300,
+                          child: EnhancedMonthlyChart(
+                            expenses: monthlyExpenses,
+                            incomes: monthlyIncomes,
+                            year: _selectedYear,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -452,7 +643,7 @@ class _YearlyAnalyticsScreenState extends State<YearlyAnalyticsScreen> with Sing
   Widget _buildCategoriesTab(
     BuildContext context,
     bool hasData,
-    TransactionProvider transactionProvider, // Fixed parameter name
+    TransactionProvider transactionProvider,
     CurrencyProvider currencyProvider,
   ) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -531,147 +722,139 @@ class _YearlyAnalyticsScreenState extends State<YearlyAnalyticsScreen> with Sing
               ),
             )
           else
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    const Text(
-                      'Category Breakdown',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    ...categoryData.entries.map((entry) {
-                      final percentage = (entry.value / totalExpense) * 100;
-                      final category = Category.values.firstWhere(
-                        (c) => c.displayName == entry.key,
-                        orElse: () => Category.other,
-                      );
-                      
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color: category.color.withValues(alpha: 0.2),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                category.icon,
-                                color: category.color,
-                                size: 20,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    entry.key,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  LinearProgressIndicator(
-                                    value: percentage / 100,
-                                    backgroundColor: colorScheme.onSurface.withValues(alpha: 0.1),
-                                    valueColor: AlwaysStoppedAnimation<Color>(category.color),
-                                    minHeight: 8,
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Text(
-                                  currencyProvider.formatAmount(entry.value),
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                Text(
-                                  '${percentage.toStringAsFixed(1)}%',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: colorScheme.onSurface.withValues(alpha: 0.6),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
+            Column(
+              children: [
+                // Category Breakdown Chart
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      children: [
+                        const Text(
+                          'Category Distribution',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      );
-                    }),
-                  ],
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          height: 200,
+                          child: MiniPieChart(
+                            data: categoryData,
+                            size: 200,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(height: 24),
+                
+                // Category List
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      children: [
+                        const Text(
+                          'Category Breakdown',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        ..._buildCategoryList(categoryData, totalExpense, currencyProvider),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
         ],
       ),
     );
   }
 
-  Widget _buildSummaryCard(
-    BuildContext context,
-    String label,
-    double amount,
-    Color color,
-    IconData icon,
+  // Helper method to build category list
+  List<Widget> _buildCategoryList(
+    Map<String, double> categoryData, 
+    double totalExpense,
     CurrencyProvider currencyProvider,
   ) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    final colorScheme = Theme.of(context).colorScheme;
+    
+    return categoryData.entries.map((entry) {
+      final percentage = (entry.value / totalExpense) * 100;
+      final category = Category.values.firstWhere(
+        (c) => c.displayName == entry.key,
+        orElse: () => Category.other,
+      );
+      
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Row(
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 12,
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    icon,
-                    color: color,
-                    size: 16,
-                  ),
-                ),
-              ],
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: category.color.withValues(alpha: 0.2),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                category.icon,
+                color: category.color,
+                size: 20,
+              ),
             ),
-            Text(
-              currencyProvider.formatAmount(amount),
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: color,
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        entry.key,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Text(
+                        '${percentage.toStringAsFixed(1)}%',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: colorScheme.onSurface.withValues(alpha: 0.6),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  LinearProgressIndicator(
+                    value: percentage / 100,
+                    backgroundColor: colorScheme.onSurface.withValues(alpha: 0.1),
+                    valueColor: AlwaysStoppedAnimation<Color>(category.color),
+                    minHeight: 8,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    currencyProvider.formatAmount(entry.value),
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: colorScheme.onSurface.withValues(alpha: 0.5),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
         ),
-      ),
-    );
+      );
+    }).toList();
   }
 
   Widget _buildStatItem(

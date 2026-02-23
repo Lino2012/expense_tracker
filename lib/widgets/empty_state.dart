@@ -12,6 +12,9 @@ class EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -20,13 +23,23 @@ class EmptyState extends StatelessWidget {
             width: 120,
             height: 120,
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
+              color: isDark 
+                  ? colorScheme.surface 
+                  : Colors.grey.shade100,
               shape: BoxShape.circle,
+              border: isDark
+                  ? null
+                  : Border.all(
+                      color: Colors.grey.shade300,
+                      width: 1,
+                    ),
             ),
             child: Icon(
               icon,
               size: 50,
-              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
+              color: isDark
+                  ? colorScheme.primary.withValues(alpha: 0.5)
+                  : Colors.grey.shade400,
             ),
           ),
           const SizedBox(height: 24),
@@ -35,7 +48,9 @@ class EmptyState extends StatelessWidget {
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 16,
-              color: Colors.white.withValues(alpha: 0.5),
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.5)
+                  : Colors.grey.shade600,
               height: 1.5,
             ),
           ),

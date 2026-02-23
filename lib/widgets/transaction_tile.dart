@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../models/app_models.dart';
+import '../models/app_models.dart';
 
 class TransactionTile extends StatelessWidget {
   final Transaction transaction;
@@ -15,6 +15,7 @@ class TransactionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isIncome = transaction.type == TransactionType.income;
     final amountColor = isIncome ? Colors.green : Colors.red;
 
@@ -51,20 +52,39 @@ class TransactionTile extends StatelessWidget {
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: colorScheme.surface,
+          color: isDark ? colorScheme.surface : Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: Colors.white.withValues(alpha: 0.1),
+            color: isDark 
+                ? Colors.white.withValues(alpha: 0.1)
+                : Colors.grey.shade200,
+            width: 1,
           ),
+          boxShadow: isDark 
+              ? null
+              : [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
         ),
         child: Row(
           children: [
+            // Category Icon
             Container(
               width: 50,
               height: 50,
               decoration: BoxDecoration(
                 color: transaction.category.color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
+                border: isDark 
+                    ? null
+                    : Border.all(
+                        color: transaction.category.color.withValues(alpha: 0.3),
+                        width: 1,
+                      ),
               ),
               child: Icon(
                 transaction.category.icon,
@@ -73,16 +93,18 @@ class TransactionTile extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 16),
+            
+            // Title and Date
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     transaction.title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: Colors.white,
+                      color: colorScheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -90,19 +112,21 @@ class TransactionTile extends StatelessWidget {
                     DateFormat('MMM dd, yyyy').format(transaction.date),
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.white.withValues(alpha: 0.5),
+                      color: colorScheme.onSurface.withValues(alpha: 0.5),
                     ),
                   ),
                 ],
               ),
             ),
+            
+            // Amount
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
                   '${isIncome ? '+' : '-'} ${NumberFormat.currency(
                     locale: 'en_PH',
-                    symbol: '₱',
+                    symbol: '₹',
                     decimalDigits: 2,
                   ).format(transaction.amount)}',
                   style: TextStyle(
@@ -117,12 +141,19 @@ class TransactionTile extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: transaction.category.color.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
+                    border: isDark
+                        ? null
+                        : Border.all(
+                            color: transaction.category.color.withValues(alpha: 0.3),
+                            width: 1,
+                          ),
                   ),
                   child: Text(
                     transaction.category.displayName,
                     style: TextStyle(
                       fontSize: 10,
                       color: transaction.category.color,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),

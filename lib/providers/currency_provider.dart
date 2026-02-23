@@ -21,7 +21,7 @@ enum Currency {
 }
 
 class CurrencyProvider extends ChangeNotifier {
-  Currency _currentCurrency = Currency.php; // Default to PHP
+  Currency _currentCurrency = Currency.usd; // Changed from php to usd
   static const String _currencyKey = 'selected_currency';
 
   Currency get currentCurrency => _currentCurrency;
@@ -32,7 +32,7 @@ class CurrencyProvider extends ChangeNotifier {
 
   Future<void> loadCurrency() async {
     final prefs = await SharedPreferences.getInstance();
-    final currencyIndex = prefs.getInt(_currencyKey) ?? 5; // Default to PHP (index 5)
+    final currencyIndex = prefs.getInt(_currencyKey) ?? 0; // Default to USD (index 0)
     _currentCurrency = Currency.values[currencyIndex];
     notifyListeners();
   }

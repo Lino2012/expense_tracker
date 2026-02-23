@@ -116,24 +116,29 @@ class MyApp extends StatelessWidget {
     seedColor: const Color(0xFF10B981),
     brightness: Brightness.light,
   ).copyWith(
-    surface: Colors.white,
-    onSurface: Colors.black87,  // Dark text for light background
-    surfaceContainerHighest: Colors.grey.shade100,
     primary: const Color(0xFF10B981),
-    secondary: const Color(0xFF059669),
-    error: const Color(0xFFDC2626),
+    secondary: const Color(0xFF34D399),
+    tertiary: const Color(0xFF6EE7B7),
+    error: const Color(0xFFEF4444),
+    surface: Colors.white,
+    onSurface: Colors.black87,
+    surfaceContainerHighest: const Color(0xFFF5F5F5), // Light gray for containers
   );
 
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
-    scaffoldBackgroundColor: Colors.grey.shade50,
+    scaffoldBackgroundColor: const Color(0xFFF8FAFC), // Slightly off-white background
     cardTheme: CardThemeData(
       color: Colors.white,
       elevation: 2,
       shadowColor: Colors.black.withValues(alpha: 0.1),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: Colors.grey.shade200,
+          width: 1,
+        ),
       ),
     ),
     appBarTheme: const AppBarTheme(
@@ -141,12 +146,12 @@ class MyApp extends StatelessWidget {
       foregroundColor: Colors.black87,
       elevation: 0,
       centerTitle: false,
-      titleTextStyle: TextStyle(
+      titleTextStyle:TextStyle(
         color: Colors.black87,
         fontSize: 20,
         fontWeight: FontWeight.w600,
       ),
-      iconTheme: IconThemeData(
+      iconTheme:IconThemeData(
         color: Colors.black87,
       ),
     ),
@@ -156,16 +161,16 @@ class MyApp extends StatelessWidget {
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: Colors.grey.shade100,
+      fillColor: Colors.grey.shade50,
       labelStyle: TextStyle(color: Colors.grey.shade700),
       hintStyle: TextStyle(color: Colors.grey.shade500),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide.none,
+        borderSide: BorderSide(color: Colors.grey.shade300),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide.none,
+        borderSide: BorderSide(color: Colors.grey.shade300),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
@@ -173,15 +178,18 @@ class MyApp extends StatelessWidget {
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFFDC2626), width: 2),
+        borderSide: const BorderSide(color: Color(0xFFEF4444), width: 2),
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
     ),
     textTheme: const TextTheme(
       headlineMedium: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
+      headlineSmall: TextStyle(color: Colors.black87, fontWeight: FontWeight.w600),
+      titleLarge: TextStyle(color: Colors.black87, fontWeight: FontWeight.w600),
+      titleMedium: TextStyle(color: Colors.black87),
       bodyLarge: TextStyle(color: Colors.black87),
       bodyMedium: TextStyle(color: Colors.black54),
-      titleLarge: TextStyle(color: Colors.black87, fontWeight: FontWeight.w600),
+      labelLarge: TextStyle(color: Colors.black87),
     ),
   );
 }
