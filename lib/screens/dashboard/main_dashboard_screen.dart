@@ -10,6 +10,7 @@ import '../../widgets/transaction_tile.dart';
 import '../../widgets/empty_state.dart';
 import '../analytics/yearly_analytics_screen.dart';
 import 'add_transaction_sheet.dart';
+import '../../widgets/backup_indicator.dart'; 
 
 class MainDashboardScreen extends StatefulWidget {
   const MainDashboardScreen({super.key});
@@ -90,6 +91,43 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
       appBar: AppBar(
         title: const Text('Dashboard'),
         actions: [
+          const BackupIndicator(), // Add this before other actions
+  const CurrencySelector(),
+  Consumer<ThemeProvider>(
+    builder: (context, themeProvider, child) {
+      return IconButton(
+        icon: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          child: Icon(
+            themeProvider.isDarkMode ? Icons.light_mode : Icons.dark_mode,
+            key: ValueKey(themeProvider.isDarkMode),
+          ),
+        ),
+        onPressed: () {
+          themeProvider.toggleTheme();
+        },
+      );
+    },
+  ),
+  IconButton(
+    icon: const Icon(Icons.bar_chart),
+    onPressed: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const YearlyAnalyticsScreen(),
+        ),
+      );
+    },
+  ),
+  IconButton(
+    icon: const Icon(Icons.logout),
+    onPressed: () {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final transactionProvider = Provider.of<TransactionProvider>(context, listen: false);
+      authProvider.logout(transactionProvider);
+    },
+  ),
           const CurrencySelector(),
           Consumer<ThemeProvider>(
             builder: (context, themeProvider, child) {

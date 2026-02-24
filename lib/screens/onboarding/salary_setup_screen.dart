@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import '../../providers/salary_provider.dart';
 import '../../providers/transaction_provider.dart';
+import '../../providers/currency_provider.dart';
 import '../../models/app_models.dart';
 
 class SalarySetupScreen extends StatefulWidget {
@@ -51,10 +52,11 @@ class _SalarySetupScreenState extends State<SalarySetupScreen> with TickerProvid
       final salary = double.parse(_salaryController.text);
       final salaryProvider = Provider.of<SalaryProvider>(context, listen: false);
       final transactionProvider = Provider.of<TransactionProvider>(context, listen: false);
+      final currencyProvider = Provider.of<CurrencyProvider>(context, listen: false);
       
       await salaryProvider.setMonthlySalary(salary);
       
-      // Create initial income transaction for salary
+      // Create initial income transaction for salary with appropriate title
       final salaryTransaction = Transaction(
         id: const Uuid().v4(),
         title: 'Monthly Salary',
@@ -67,6 +69,14 @@ class _SalarySetupScreenState extends State<SalarySetupScreen> with TickerProvid
       await transactionProvider.addTransaction(salaryTransaction);
       
       if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Salary set to ${currencyProvider.formatAmount(salary)}'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+        );
         Navigator.pushReplacementNamed(context, '/dashboard');
       }
     }
@@ -75,6 +85,8 @@ class _SalarySetupScreenState extends State<SalarySetupScreen> with TickerProvid
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final currencyProvider = Provider.of<CurrencyProvider>(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       body: SafeArea(
@@ -90,6 +102,7 @@ class _SalarySetupScreenState extends State<SalarySetupScreen> with TickerProvid
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
+                        // Animated Icon
                         Container(
                           width: 120,
                           height: 120,
@@ -118,59 +131,139 @@ class _SalarySetupScreenState extends State<SalarySetupScreen> with TickerProvid
                           ),
                         ),
                         const SizedBox(height: 40),
+                        
+                        // Main Title
                         Text(
                           'Set Your Monthly Salary',
                           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                                 fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                                color: colorScheme.onSurface,
                               ),
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 16),
+                        
+                        // Instruction Text
                         Text(
-                          'This will be your initial income.\nYou can always update it later.',
+                          'Please enter your monthly income to get started.\nYou can change the currency using the dropdown below.',
                           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                color: Colors.white.withValues(alpha: 0.7),
+                                color: colorScheme.onSurface.withValues(alpha: 0.7),
                               ),
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 48),
                         
+                        // Salary Input Card
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
                           decoration: BoxDecoration(
-                            color: colorScheme.surface,
+                            color: isDark ? colorScheme.surface : Colors.white,
                             borderRadius: BorderRadius.circular(24),
                             border: Border.all(
                               color: colorScheme.primary.withValues(alpha: 0.2),
+                              width: 1,
                             ),
+                            boxShadow: isDark 
+                                ? null
+                                : [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(alpha: 0.05),
+                                      blurRadius: 20,
+                                      offset: const Offset(0, 5),
+                                    ),
+                                  ],
                           ),
                           child: Form(
                             key: _formKey,
                             child: Column(
                               children: [
+                                // Currency Selector Row
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      'Currency:',
+                                      style: TextStyle(
+                                        color: colorScheme.onSurface.withValues(alpha: 0.7),
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: colorScheme.primary.withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(20),
+                                        border: Border.all(
+                                          color: colorScheme.primary.withValues(alpha: 0.3),
+                                        ),
+                                      ),
+                                      child: DropdownButton<Currency>(
+                                        value: currencyProvider.currentCurrency,
+                                        dropdownColor: isDark ? colorScheme.surface : Colors.white,
+                                        underline: Container(),
+                                        icon: Icon(
+                                          Icons.arrow_drop_down,
+                                          color: colorScheme.primary,
+                                        ),
+                                        items: currencyProvider.currencies.map((currency) {
+                                          return DropdownMenuItem(
+                                            value: currency,
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Text(
+                                                  currency.symbol,
+                                                  style: TextStyle(
+                                                    color: colorScheme.primary,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 4),
+                                                Text(
+                                                  currency.code,
+                                                  style: TextStyle(
+                                                    color: colorScheme.onSurface,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          );
+                                        }).toList(),
+                                        onChanged: (Currency? newCurrency) {
+                                          if (newCurrency != null) {
+                                            currencyProvider.setCurrency(newCurrency);
+                                          }
+                                        },
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 24),
+                                
+                                // Salary Input Field
                                 Text(
                                   'Monthly Salary',
                                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                        color: Colors.white.withValues(alpha: 0.7),
+                                        color: colorScheme.onSurface.withValues(alpha: 0.7),
                                       ),
                                 ),
                                 const SizedBox(height: 16),
                                 TextFormField(
                                   controller: _salaryController,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 32,
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.white,
+                                    color: colorScheme.onSurface,
                                   ),
                                   textAlign: TextAlign.center,
                                   keyboardType: TextInputType.number,
                                   decoration: InputDecoration(
-                                    prefixText: '₱ ',
-                                    prefixStyle: const TextStyle(
+                                    prefixText: '${currencyProvider.currentCurrency.symbol} ',
+                                    prefixStyle: TextStyle(
                                       fontSize: 32,
                                       fontWeight: FontWeight.bold,
-                                      color: Color(0xFF10B981),
+                                      color: colorScheme.primary,
                                     ),
                                     border: InputBorder.none,
                                     enabledBorder: InputBorder.none,
@@ -179,7 +272,7 @@ class _SalarySetupScreenState extends State<SalarySetupScreen> with TickerProvid
                                     hintStyle: TextStyle(
                                       fontSize: 32,
                                       fontWeight: FontWeight.bold,
-                                      color: Colors.white.withValues(alpha: 0.3),
+                                      color: colorScheme.onSurface.withValues(alpha: 0.3),
                                     ),
                                   ),
                                   validator: (value) {
@@ -206,6 +299,7 @@ class _SalarySetupScreenState extends State<SalarySetupScreen> with TickerProvid
                 ),
               ),
               
+              // Continue Button
               FadeTransition(
                 opacity: _fadeAnimation,
                 child: Padding(

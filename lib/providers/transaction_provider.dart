@@ -7,7 +7,8 @@ class TransactionProvider extends ChangeNotifier {
   List<Transaction> _transactions = [];
   bool _isLoading = false;
   String? _currentUserId;
-
+  
+  String? get currentUserId => _currentUserId;
   List<Transaction> get transactions => _transactions;
   bool get isLoading => _isLoading;
 
@@ -15,12 +16,23 @@ class TransactionProvider extends ChangeNotifier {
     // Will be initialized when user logs in
   }
 
+  // Single initialize method that combines both
   Future<void> initialize(String userId) async {
-  debugPrint('TransactionProvider - Initializing for user: $userId'); // Debug print
-  _currentUserId = userId;
-  await StorageService.ensureDataConsistency(userId);
-  await loadTransactions();
-}
+    debugPrint('TransactionProvider - Initializing for user: $userId');
+    _currentUserId = userId;
+    
+    // Ensure data consistency first
+    await StorageService.ensureDataConsistency(userId);
+    
+    // Migrate data if needed
+    await StorageService.migrateDataIfNeeded(userId);
+    
+    // Load transactions
+    await loadTransactions();
+    
+    // Verify data integrity
+    await verifyAndRepairData();
+  }
 
   Future<void> loadTransactions() async {
     if (_currentUserId == null) return;
@@ -38,6 +50,17 @@ class TransactionProvider extends ChangeNotifier {
     
     _isLoading = false;
     notifyListeners();
+  }
+
+  // Add this method to check data integrity on startup
+  Future<void> verifyAndRepairData() async {
+    if (_currentUserId == null) return;
+    
+    final isValid = await StorageService.verifyDataIntegrity(_currentUserId!);
+    if (!isValid) {
+      debugPrint('TransactionProvider - Data integrity issue detected, attempting repair');
+      await loadTransactions(); // Reload from storage
+    }
   }
 
   Future<void> addTransaction(Transaction transaction) async {

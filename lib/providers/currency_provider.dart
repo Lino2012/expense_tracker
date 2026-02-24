@@ -21,7 +21,7 @@ enum Currency {
 }
 
 class CurrencyProvider extends ChangeNotifier {
-  Currency _currentCurrency = Currency.usd; // Changed from php to usd
+  Currency _currentCurrency = Currency.usd; // USD is default
   static const String _currencyKey = 'selected_currency';
 
   Currency get currentCurrency => _currentCurrency;
