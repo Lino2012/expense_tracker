@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
-import '../../models/app_models.dart';
+import '../../models/app_models.dart' as models; 
 import '../../providers/transaction_provider.dart';
 import '../../providers/currency_provider.dart';
 
 class AddTransactionSheet extends StatefulWidget {
-  final Transaction? transactionToEdit;
+  final models.Transaction? transactionToEdit; // Use models.Transaction
 
   const AddTransactionSheet({super.key, this.transactionToEdit});
 
@@ -24,8 +24,8 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> with SingleTi
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   
-  TransactionType _selectedType = TransactionType.expense;
-  Category _selectedCategory = Category.food;
+  models.TransactionType _selectedType = models.TransactionType.expense; // Use models.TransactionType
+  models.Category _selectedCategory = models.Category.food; // Use models.Category
   DateTime _selectedDate = DateTime.now();
   bool _isRecurring = false;
 
@@ -64,7 +64,9 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> with SingleTi
 
   void _saveTransaction() async {
     if (_formKey.currentState!.validate()) {
-      final transaction = Transaction(
+      debugPrint('✅ Form validated, creating transaction...');
+      
+      final transaction = models.Transaction(
         id: widget.transactionToEdit?.id ?? const Uuid().v4(),
         title: _titleController.text,
         amount: double.parse(_amountController.text),
@@ -72,29 +74,56 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> with SingleTi
         type: _selectedType,
         category: _selectedCategory,
       );
+      
+      debugPrint('✅ Transaction created: ${transaction.title}, ${transaction.amount}');
+      debugPrint('✅ Transaction type: ${transaction.type}');
+      debugPrint('✅ Transaction category: ${transaction.category}');
 
       final transactionProvider = Provider.of<TransactionProvider>(context, listen: false);
+      debugPrint('✅ TransactionProvider obtained');
       
-      if (widget.transactionToEdit != null) {
-        await transactionProvider.updateTransaction(transaction);
-      } else {
-        await transactionProvider.addTransaction(transaction);
+      try {
+        if (widget.transactionToEdit != null) {
+          debugPrint('📝 Updating existing transaction...');
+          await transactionProvider.updateTransaction(transaction);
+        } else {
+          debugPrint('➕ Adding new transaction...');
+          await transactionProvider.addTransaction(transaction);
+        }
+        
+        debugPrint('✅ Transaction saved successfully');
+        
+        if (mounted) {
+          // Close the bottom sheet first
+          Navigator.pop(context, true); // Return true to indicate success
+          
+          // Show success message
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(widget.transactionToEdit != null 
+                  ? 'Transaction updated successfully' 
+                  : 'Transaction added successfully'),
+              backgroundColor: Colors.green,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+      } catch (e) {
+        debugPrint('❌ Error saving transaction: $e');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error: ${e.toString()}'),
+              backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
       }
-      
-      if (mounted) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(widget.transactionToEdit != null 
-                ? 'Transaction updated successfully' 
-                : 'Transaction added successfully'),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            duration: const Duration(seconds: 2),
-          ),
-        );
-      }
+    } else {
+      debugPrint('❌ Form validation failed');
     }
   }
 
@@ -214,7 +243,7 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> with SingleTi
                             children: [
                               Expanded(
                                 child: _buildTypeToggle(
-                                  TransactionType.income,
+                                  models.TransactionType.income,
                                   'Income',
                                   Icons.trending_up,
                                   Colors.green,
@@ -222,7 +251,7 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> with SingleTi
                               ),
                               Expanded(
                                 child: _buildTypeToggle(
-                                  TransactionType.expense,
+                                  models.TransactionType.expense,
                                   'Expense',
                                   Icons.trending_down,
                                   Colors.red,
@@ -294,7 +323,7 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> with SingleTi
                                   color: isDark ? colorScheme.surfaceContainerHighest : Colors.grey.shade100,
                                   borderRadius: BorderRadius.circular(12),
                                 ),
-                                child: DropdownButtonFormField<Category>(
+                                child: DropdownButtonFormField<models.Category>(
                                   initialValue: _selectedCategory,
                                   decoration: const InputDecoration(
                                     labelText: 'Category',
@@ -302,7 +331,7 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> with SingleTi
                                     border: InputBorder.none,
                                     contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                   ),
-                                  items: Category.values.map((category) {
+                                  items: models.Category.values.map((category) {
                                     return DropdownMenuItem(
                                       value: category,
                                       child: Row(
@@ -437,7 +466,7 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> with SingleTi
                               child: ElevatedButton(
                                 onPressed: _saveTransaction,
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: _selectedType == TransactionType.income 
+                                  backgroundColor: _selectedType == models.TransactionType.income 
                                       ? Colors.green 
                                       : Colors.red,
                                   foregroundColor: Colors.white,
@@ -467,7 +496,7 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> with SingleTi
     );
   }
 
-  Widget _buildTypeToggle(TransactionType type, String label, IconData icon, Color color) {
+  Widget _buildTypeToggle(models.TransactionType type, String label, IconData icon, Color color) {
     final isSelected = _selectedType == type;
     final colorScheme = Theme.of(context).colorScheme;
 

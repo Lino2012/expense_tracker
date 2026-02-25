@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import '../models/app_models.dart';
 import '../services/storage_service.dart';
 import 'package:intl/intl.dart';
@@ -16,33 +17,42 @@ class TransactionProvider extends ChangeNotifier {
     // Will be initialized when user logs in
   }
 
-  // Single initialize method that combines both
-  Future<void> initialize(String userId) async {
-    debugPrint('TransactionProvider - Initializing for user: $userId');
-    _currentUserId = userId;
-    
-    // Ensure data consistency first
-    await StorageService.ensureDataConsistency(userId);
-    
-    // Migrate data if needed
-    await StorageService.migrateDataIfNeeded(userId);
-    
-    // Load transactions
-    await loadTransactions();
-    
-    // Verify data integrity
-    await verifyAndRepairData();
-  }
+  // Single initialize method
+Future<void> initialize(String userId) async {
+  debugPrint('📊 TransactionProvider - Initializing for user: $userId');
+  _currentUserId = userId;
+  debugPrint('📊 TransactionProvider - _currentUserId set to: $_currentUserId');
+  
+  // Ensure data consistency first
+  await StorageService.ensureDataConsistency(userId);
+  
+  // Migrate data if needed
+  await StorageService.migrateDataIfNeeded(userId);
+  
+  // Load transactions
+  await loadTransactions();
+  
+  // Verify data integrity
+  await verifyAndRepairData();
+  
+  debugPrint('📊 TransactionProvider - Initialization complete. Current user ID: $_currentUserId');
+}
 
+  // Single loadTransactions method
   Future<void> loadTransactions() async {
-    if (_currentUserId == null) return;
+    if (_currentUserId == null) {
+      debugPrint('Cannot load transactions: No user ID');
+      return;
+    }
     
     _isLoading = true;
     notifyListeners();
 
     try {
+      debugPrint('Loading transactions for user: $_currentUserId');
       _transactions = await StorageService.getUserTransactions(_currentUserId!);
       _transactions.sort((a, b) => b.date.compareTo(a.date));
+      debugPrint('Loaded ${_transactions.length} transactions');
     } catch (e) {
       debugPrint('Error loading transactions: $e');
       _transactions = [];
@@ -52,24 +62,25 @@ class TransactionProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Add this method to check data integrity on startup
-  Future<void> verifyAndRepairData() async {
-    if (_currentUserId == null) return;
-    
-    final isValid = await StorageService.verifyDataIntegrity(_currentUserId!);
-    if (!isValid) {
-      debugPrint('TransactionProvider - Data integrity issue detected, attempting repair');
-      await loadTransactions(); // Reload from storage
-    }
-  }
-
   Future<void> addTransaction(Transaction transaction) async {
-    if (_currentUserId == null) return;
+    if (_currentUserId == null) {
+      debugPrint('Error: No current user ID');
+      return;
+    }
     
     try {
+      debugPrint('Adding transaction for user: $_currentUserId');
+      debugPrint('Current transactions count before: ${_transactions.length}');
+      
       _transactions.insert(0, transaction);
+      debugPrint('Transactions count after insert: ${_transactions.length}');
+      
       await StorageService.saveUserTransactions(_currentUserId!, _transactions);
+      debugPrint('Transactions saved to storage');
+      
       notifyListeners();
+      debugPrint('UI notified of changes');
+      
     } catch (e) {
       debugPrint('Error adding transaction: $e');
     }
@@ -99,6 +110,17 @@ class TransactionProvider extends ChangeNotifier {
       }
     } catch (e) {
       debugPrint('Error updating transaction: $e');
+    }
+  }
+
+  // Add this method to check data integrity on startup
+  Future<void> verifyAndRepairData() async {
+    if (_currentUserId == null) return;
+    
+    final isValid = await StorageService.verifyDataIntegrity(_currentUserId!);
+    if (!isValid) {
+      debugPrint('TransactionProvider - Data integrity issue detected, attempting repair');
+      await loadTransactions(); // Reload from storage
     }
   }
 
@@ -224,4 +246,10 @@ class TransactionProvider extends ChangeNotifier {
     final maxMonth = monthlyExpenses.entries.reduce((a, b) => a.value > b.value ? a : b).key;
     return DateFormat('MMMM').format(DateTime(year, maxMonth));
   }
+  // Add this method to manually set user ID if needed
+void setUserId(String userId) {
+  debugPrint('📊 TransactionProvider - Manually setting user ID to: $userId');
+  _currentUserId = userId;
+  loadTransactions();
+}
 }

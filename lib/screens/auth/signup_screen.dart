@@ -111,25 +111,23 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
-          // Theme toggle button
-          Consumer<ThemeProvider>(
-            builder: (context, themeProvider, child) {
-              return IconButton(
-                icon: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 300),
-                  child: Icon(
-                    themeProvider.isDarkMode ? Icons.light_mode : Icons.dark_mode,
-                    key: ValueKey(themeProvider.isDarkMode),
-                    color: colorScheme.onSurface,
-                  ),
-                ),
-                onPressed: () {
-                  themeProvider.toggleTheme();
-                },
-              );
-            },
+  Consumer<ThemeProvider>(
+    builder: (context, themeProvider, child) {
+      return IconButton(
+        icon: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          child: Icon(
+            themeProvider.isDarkMode ? Icons.light_mode : Icons.dark_mode,
+            key: ValueKey(themeProvider.isDarkMode),
           ),
-        ],
+        ),
+        onPressed: () {
+          themeProvider.toggleTheme();
+        },
+      );
+    },
+  ),
+],
       ),
       body: SafeArea(
         child: Center(

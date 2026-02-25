@@ -7,7 +7,7 @@ import '../../providers/currency_provider.dart';
 import '../../models/app_models.dart';
 import '../../widgets/charts/enhanced_monthly_chart.dart';
 import '../../widgets/charts/weekly_expandable_chart.dart';
-import '../../widgets/charts/mini_pie_chart.dart';
+import '../../widgets/charts/mini_pie_chart.dart' as charts; // Use alias
 import '../../widgets/currency_selector.dart';
 
 class YearlyAnalyticsScreen extends StatefulWidget {
@@ -286,7 +286,7 @@ class _YearlyAnalyticsScreenState extends State<YearlyAnalyticsScreen> with Sing
                             ),
                             TextButton(
                               onPressed: () {
-                                _tabController.animateTo(2); // Switch to categories tab
+                                _tabController.animateTo(2);
                               },
                               child: const Text('View All'),
                             ),
@@ -295,10 +295,10 @@ class _YearlyAnalyticsScreenState extends State<YearlyAnalyticsScreen> with Sing
                         const SizedBox(height: 16),
                         Row(
                           children: [
-                            // Mini Pie Chart
+                            // Mini Pie Chart - using alias
                             Expanded(
                               flex: 2,
-                              child: MiniPieChart(
+                              child: charts.MiniPieChart(
                                 data: categoryData,
                                 size: 120,
                               ),
@@ -724,7 +724,7 @@ class _YearlyAnalyticsScreenState extends State<YearlyAnalyticsScreen> with Sing
           else
             Column(
               children: [
-                // Category Breakdown Chart
+                // Category Breakdown Chart - using alias
                 Card(
                   child: Padding(
                     padding: const EdgeInsets.all(16),
@@ -740,7 +740,7 @@ class _YearlyAnalyticsScreenState extends State<YearlyAnalyticsScreen> with Sing
                         const SizedBox(height: 16),
                         SizedBox(
                           height: 200,
-                          child: MiniPieChart(
+                          child: charts.MiniPieChart(
                             data: categoryData,
                             size: 200,
                           ),
@@ -785,7 +785,11 @@ class _YearlyAnalyticsScreenState extends State<YearlyAnalyticsScreen> with Sing
   ) {
     final colorScheme = Theme.of(context).colorScheme;
     
-    return categoryData.entries.map((entry) {
+    // Sort categories by amount (highest first)
+    final sortedEntries = categoryData.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    
+    return sortedEntries.map((entry) {
       final percentage = (entry.value / totalExpense) * 100;
       final category = Category.values.firstWhere(
         (c) => c.displayName == entry.key,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/foundation.dart';
 
 enum Currency {
   usd('USD', '\$', 'en_US'),
@@ -21,7 +22,7 @@ enum Currency {
 }
 
 class CurrencyProvider extends ChangeNotifier {
-  Currency _currentCurrency = Currency.usd; // USD is default
+  Currency _currentCurrency = Currency.usd;
   static const String _currencyKey = 'selected_currency';
 
   Currency get currentCurrency => _currentCurrency;
@@ -32,7 +33,7 @@ class CurrencyProvider extends ChangeNotifier {
 
   Future<void> loadCurrency() async {
     final prefs = await SharedPreferences.getInstance();
-    final currencyIndex = prefs.getInt(_currencyKey) ?? 0; // Default to USD (index 0)
+    final currencyIndex = prefs.getInt(_currencyKey) ?? 0;
     _currentCurrency = Currency.values[currencyIndex];
     notifyListeners();
   }
@@ -45,12 +46,17 @@ class CurrencyProvider extends ChangeNotifier {
   }
 
   String formatAmount(double amount) {
-    final numberFormat = NumberFormat.currency(
-      locale: _currentCurrency.locale,
-      symbol: _currentCurrency.symbol,
-      decimalDigits: _currentCurrency == Currency.jpy ? 0 : 2,
-    );
-    return numberFormat.format(amount);
+    try {
+      final numberFormat = NumberFormat.currency(
+        locale: _currentCurrency.locale,
+        symbol: _currentCurrency.symbol,
+        decimalDigits: _currentCurrency == Currency.jpy ? 0 : 2,
+      );
+      return numberFormat.format(amount);
+    } catch (e) {
+      debugPrint('Error formatting amount: $e');
+      return '${_currentCurrency.symbol}${amount.toStringAsFixed(2)}';
+    }
   }
 
   List<Currency> get currencies => Currency.values;

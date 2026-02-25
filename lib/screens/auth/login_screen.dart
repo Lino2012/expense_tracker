@@ -42,29 +42,35 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
   }
 
   void _handleLogin() async {
-    if (_formKey.currentState!.validate()) {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final transactionProvider = Provider.of<TransactionProvider>(context, listen: false);
+  if (_formKey.currentState!.validate()) {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final transactionProvider = Provider.of<TransactionProvider>(context, listen: false);
+    
+    debugPrint('Attempting login...');
+    final success = await authProvider.login(
+      _emailController.text.trim(),
+      _passwordController.text,
+      transactionProvider,
+    );
 
-      final success = await authProvider.login(
-        _emailController.text.trim(),
-        _passwordController.text,
-        transactionProvider,
-      );
-
-      if (success && mounted) {
-        // Navigate will be handled by AuthWrapper
-      } else if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(authProvider.error ?? 'Login failed'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          ),
-        );
+    if (success && mounted) {
+      debugPrint('Login successful, transaction provider should be initialized');
+      // Double-check that user ID is set
+      if (transactionProvider.currentUserId == null && authProvider.currentUser != null) {
+        debugPrint('Manually setting user ID as fallback');
+        transactionProvider.setUserId(authProvider.currentUser!.id);
       }
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(authProvider.error ?? 'Login failed'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+      );
     }
+  }
   }
 
   @override

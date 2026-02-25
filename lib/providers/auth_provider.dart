@@ -24,33 +24,38 @@ class AuthProvider extends ChangeNotifier {
   notifyListeners();
 
   try {
-    debugPrint('Attempting login for email: $email'); // Debug print
+    debugPrint('🔐 AuthProvider - Attempting login for email: $email');
     
     final users = await StorageService.getAllUsers();
-    debugPrint('Found ${users.length} users'); // Debug print
+    debugPrint('🔐 AuthProvider - Found ${users.length} users');
+    
+    // Debug: Print all users (remove in production)
+    for (var u in users) {
+      debugPrint('🔐 User in storage: ${u.email}');
+    }
     
     final user = users.firstWhere(
       (u) => u.email == email && u.password == password,
       orElse: () {
-        debugPrint('No user found with email: $email'); // Debug print
+        debugPrint('🔐 AuthProvider - No user found with email: $email');
         throw Exception('Invalid email or password');
       },
     );
     
-    debugPrint('User found: ${user.fullName}'); // Debug print
+    debugPrint('🔐 AuthProvider - User found: ${user.fullName}, ID: ${user.id}');
     _currentUser = user;
     await StorageService.setCurrentUser(user);
     
     // Initialize transaction provider with user ID
-    debugPrint('Initializing transaction provider for user: ${user.id}'); // Debug print
+    debugPrint('🔐 AuthProvider - Initializing transaction provider for user: ${user.id}');
     await transactionProvider.initialize(user.id);
     
     _isLoading = false;
     notifyListeners();
-    debugPrint('Login successful'); // Debug print
+    debugPrint('🔐 AuthProvider - Login successful');
     return true;
   } catch (e) {
-    debugPrint('Login error: $e'); // Debug print
+    debugPrint('🔐 AuthProvider - Login error: $e');
     _error = e.toString().replaceAll('Exception: ', '');
     _isLoading = false;
     notifyListeners();

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import '../../models/app_models.dart' as models;
 
 class MiniPieChart extends StatelessWidget {
   final Map<String, double> data;
@@ -15,7 +16,11 @@ class MiniPieChart extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     
+    debugPrint('📊 MiniPieChart - Building with data: $data');
+    debugPrint('📊 MiniPieChart - Data entries count: ${data.length}');
+    
     if (data.isEmpty) {
+      debugPrint('📊 MiniPieChart - No data, showing empty state');
       return Container(
         width: size,
         height: size,
@@ -32,8 +37,18 @@ class MiniPieChart extends StatelessWidget {
     }
 
     final total = data.values.fold(0.0, (sum, value) => sum + value);
+    debugPrint('📊 MiniPieChart - Total amount: $total');
+    
     final List<PieChartSectionData> sections = [];
-    final colors = [
+    
+    // Sort entries by value (highest first) for better visual order
+    final sortedEntries = data.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+
+    debugPrint('📊 MiniPieChart - Sorted entries: ${sortedEntries.map((e) => "${e.key}: ${e.value}")}');
+
+    // Pre-defined colors for categories that might not be found
+    final fallbackColors = [
       colorScheme.primary,
       colorScheme.secondary,
       colorScheme.tertiary,
@@ -42,28 +57,76 @@ class MiniPieChart extends StatelessWidget {
       Colors.pink,
       Colors.teal,
       Colors.amber,
+      Colors.indigo,
+      Colors.cyan,
     ];
+    
+    int fallbackIndex = 0;
 
-    int colorIndex = 0;
-    data.forEach((category, amount) {
-      final percentage = (amount / total) * 100;
+    for (var entry in sortedEntries) {
+      final percentage = (entry.value / total) * 100;
+      debugPrint('📊 MiniPieChart - Category: ${entry.key}, Percentage: $percentage%');
+      
       if (percentage > 0.5) { // Only show sections that are at least 0.5%
+        
+        // Find the matching category to get its color
+        Color sectionColor;
+        try {
+          final category = models.Category.values.firstWhere(
+            (c) => c.displayName == entry.key,
+          );
+          sectionColor = category.color;
+          debugPrint('📊 MiniPieChart - Found category: ${entry.key}, Color: $sectionColor');
+        } catch (e) {
+          debugPrint('📊 MiniPieChart - Category not found: ${entry.key}, using fallback color');
+          sectionColor = fallbackColors[fallbackIndex % fallbackColors.length];
+          fallbackIndex++;
+        }
+        
         sections.add(
           PieChartSectionData(
-            value: amount,
-            title: '${percentage.toStringAsFixed(1)}%',
-            radius: size * 0.3,
-            titleStyle: const TextStyle(
-              fontSize: 10,
+            value: entry.value,
+            title: percentage > 5 ? '${percentage.toStringAsFixed(1)}%' : '', // Only show % if >5%
+            titleStyle: TextStyle(
+              fontSize: percentage > 10 ? 10 : 8,
               fontWeight: FontWeight.bold,
               color: Colors.white,
             ),
-            color: colors[colorIndex % colors.length],
+            color: sectionColor,
+            radius: size * 0.3,
+            titlePositionPercentageOffset: 0.6,
           ),
         );
-        colorIndex++;
       }
-    });
+    }
+
+    debugPrint('📊 MiniPieChart - Created ${sections.length} sections');
+
+    // If we have no sections but have data, add all sections without percentages
+    if (sections.isEmpty && sortedEntries.isNotEmpty) {
+      debugPrint('📊 MiniPieChart - No sections with >0.5%, adding all sections without titles');
+      for (var entry in sortedEntries) {
+        Color sectionColor;
+        try {
+          final category = models.Category.values.firstWhere(
+            (c) => c.displayName == entry.key,
+          );
+          sectionColor = category.color;
+        } catch (e) {
+          sectionColor = fallbackColors[fallbackIndex % fallbackColors.length];
+          fallbackIndex++;
+        }
+        
+        sections.add(
+          PieChartSectionData(
+            value: entry.value,
+            title: '',
+            color: sectionColor,
+            radius: size * 0.3,
+          ),
+        );
+      }
+    }
 
     return SizedBox(
       width: size,
@@ -76,6 +139,7 @@ class MiniPieChart extends StatelessWidget {
           pieTouchData: PieTouchData(
             touchCallback: (event, response) {},
           ),
+          borderData: FlBorderData(show: false),
         ),
       ),
     );

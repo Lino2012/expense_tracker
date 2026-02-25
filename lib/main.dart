@@ -203,8 +203,18 @@ class AuthWrapper extends StatelessWidget {
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
     final salaryProvider = Provider.of<SalaryProvider>(context);
+    final transactionProvider = Provider.of<TransactionProvider>(context);
 
+    // If user is authenticated
     if (authProvider.isAuthenticated) {
+      // Check if we need to initialize transaction provider
+      if (transactionProvider.currentUserId == null && authProvider.currentUser != null) {
+        // Initialize transaction provider with current user
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          transactionProvider.initialize(authProvider.currentUser!.id);
+        });
+      }
+      
       if (salaryProvider.monthlySalary == null) {
         return const SalarySetupScreen();
       }
