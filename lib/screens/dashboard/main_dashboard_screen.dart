@@ -287,18 +287,18 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
                                 color: isDark ? Colors.white : Colors.black87,
                               ),
                         ),
-                        TextButton(
-                          onPressed: () {
-                            // TODO: Navigate to all transactions view
-                          },
-                          child: Text(
-                            'View All',
-                            style: TextStyle(
-                              color: colorScheme.primary,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
+                       TextButton(
+  onPressed: () {
+    // Navigate to all transactions view
+  },
+  child: Text(
+    'View All',
+    style: TextStyle(
+      color: colorScheme.primary,
+      fontWeight: FontWeight.w600,
+    ),
+  ),
+),
                       ],
                     ),
                     const SizedBox(height: 8),

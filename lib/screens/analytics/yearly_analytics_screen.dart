@@ -9,6 +9,7 @@ import '../../widgets/charts/enhanced_monthly_chart.dart';
 import '../../widgets/charts/weekly_expandable_chart.dart';
 import '../../widgets/charts/mini_pie_chart.dart' as charts; // Use alias
 import '../../widgets/currency_selector.dart';
+import '../../models/app_models.dart' as models;
 
 class YearlyAnalyticsScreen extends StatefulWidget {
   const YearlyAnalyticsScreen({super.key});
@@ -641,141 +642,176 @@ class _YearlyAnalyticsScreenState extends State<YearlyAnalyticsScreen> with Sing
   }
 
   Widget _buildCategoriesTab(
-    BuildContext context,
-    bool hasData,
-    TransactionProvider transactionProvider,
-    CurrencyProvider currencyProvider,
-  ) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final categoryData = transactionProvider.getCategoryBreakdown(_selectedYear, null);
-    final totalExpense = categoryData.values.fold(0.0, (sum, value) => sum + value);
+  BuildContext context,
+  bool hasData,
+  TransactionProvider transactionProvider,
+  CurrencyProvider currencyProvider,
+) {
+  final colorScheme = Theme.of(context).colorScheme;
+  final categoryData = transactionProvider.getCategoryBreakdown(_selectedYear, null);
+  final totalExpense = categoryData.values.fold(0.0, (sum, value) => sum + value);
+  
+  debugPrint('📊 Categories Tab - Category data: $categoryData');
+  debugPrint('📊 Categories Tab - Total expense: $totalExpense');
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          // Year selector
-          Center(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: colorScheme.surface,
-                borderRadius: BorderRadius.circular(30),
-                border: Border.all(color: colorScheme.primary.withValues(alpha: 0.3)),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.chevron_left),
-                    onPressed: () {
-                      setState(() {
-                        _selectedYear--;
-                      });
-                    },
-                  ),
-                  Text(
-                    _selectedYear.toString(),
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.chevron_right),
-                    onPressed: () {
-                      setState(() {
-                        _selectedYear++;
-                      });
-                    },
-                  ),
-                ],
-              ),
+  return SingleChildScrollView(
+    padding: const EdgeInsets.all(16),
+    child: Column(
+      children: [
+        // Year selector
+        Center(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: colorScheme.surface,
+              borderRadius: BorderRadius.circular(30),
+              border: Border.all(color: colorScheme.primary.withValues(alpha: 0.3)),
             ),
-          ),
-          const SizedBox(height: 24),
-
-          if (categoryData.isEmpty)
-            Center(
-              child: Column(
-                children: [
-                  const SizedBox(height: 50),
-                  Container(
-                    width: 120,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      color: colorScheme.surface,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.pie_chart,
-                      size: 50,
-                      color: colorScheme.primary.withValues(alpha: 0.5),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  Text(
-                    'No category data for $_selectedYear',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                ],
-              ),
-            )
-          else
-            Column(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                // Category Breakdown Chart - using alias
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      children: [
-                        const Text(
-                          'Category Distribution',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        SizedBox(
-                          height: 200,
-                          child: charts.MiniPieChart(
-                            data: categoryData,
-                            size: 200,
-                          ),
-                        ),
-                      ],
-                    ),
+                IconButton(
+                  icon: const Icon(Icons.chevron_left),
+                  onPressed: () {
+                    setState(() {
+                      _selectedYear--;
+                    });
+                  },
+                ),
+                Text(
+                  _selectedYear.toString(),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 24),
-                
-                // Category List
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      children: [
-                        const Text(
-                          'Category Breakdown',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        ..._buildCategoryList(categoryData, totalExpense, currencyProvider),
-                      ],
-                    ),
-                  ),
+                IconButton(
+                  icon: const Icon(Icons.chevron_right),
+                  onPressed: () {
+                    setState(() {
+                      _selectedYear++;
+                    });
+                  },
                 ),
               ],
             ),
-        ],
-      ),
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        if (categoryData.isEmpty)
+          Center(
+            child: Column(
+              children: [
+                const SizedBox(height: 50),
+                Container(
+                  width: 120,
+                  height: 120,
+                  decoration: BoxDecoration(
+                    color: colorScheme.surface,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.pie_chart,
+                    size: 50,
+                    color: colorScheme.primary.withValues(alpha: 0.5),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  'No category data for $_selectedYear',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+              ],
+            ),
+          )
+        else
+          Column(
+            children: [
+              // Category Breakdown Chart
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      const Text(
+                        'Category Distribution',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        height: 200,
+                        child: charts.MiniPieChart(
+                          data: categoryData,
+                          size: 200,
+                        ),
+                      ),
+                      // Add a legend below the chart
+                      // Add a legend below the chart
+const SizedBox(height: 16),
+Wrap(
+  spacing: 16,
+  runSpacing: 8,
+  children: categoryData.entries.map((entry) {
+    final category = models.Category.values.firstWhere(
+      (c) => c.displayName == entry.key,
+      orElse: () => models.Category.other,
     );
-  }
+    final percentage = (entry.value / totalExpense) * 100;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(
+            color: category.color,
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          '${entry.key} (${percentage.toStringAsFixed(1)}%)',
+          style: const TextStyle(fontSize: 12),
+        ),
+      ],
+    );
+  }).toList(),
+),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              
+              // Category List
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      const Text(
+                        'Category Breakdown',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      ..._buildCategoryList(categoryData, totalExpense, currencyProvider),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+      ],
+    ),
+  );
+}
 
   // Helper method to build category list
   List<Widget> _buildCategoryList(
