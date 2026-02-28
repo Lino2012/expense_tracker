@@ -1,11 +1,11 @@
 {
-    "name": "expense_tracker",
-    "short_name": "expense_tracker",
+    "name": "Expensio",
+    "short_name": "Expensio",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#0F172A",
+    "theme_color": "#10B981",
+    "description": "A beautiful expense tracker app",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
