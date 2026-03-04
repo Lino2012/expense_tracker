@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'dart:io' show Platform;
 import 'providers/auth_provider.dart';
 import 'providers/transaction_provider.dart';
 import 'providers/salary_provider.dart';
@@ -10,9 +12,17 @@ import 'screens/auth/login_screen.dart';
 import 'screens/auth/signup_screen.dart';
 import 'screens/onboarding/salary_setup_screen.dart';
 import 'screens/dashboard/main_dashboard_screen.dart';
+import 'screens/profile/profile_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize database factory for desktop platforms (Windows)
+  if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+    // Initialize FFI for desktop
+    sqfliteFfiInit();
+    databaseFactory = databaseFactoryFfi;
+  }
   
   // Initialize SharedPreferences
   await SharedPreferences.getInstance();
@@ -41,12 +51,14 @@ class ExpensioApp extends StatelessWidget {
             theme: _buildLightTheme(),
             darkTheme: _buildOriginalDarkTheme(),
             themeMode: themeProvider.themeMode,
-            home: const AuthWrapper(),
+            initialRoute: '/',
             routes: {
+              '/': (context) => const AuthWrapper(),
               '/login': (context) => const LoginScreen(),
               '/signup': (context) => const SignupScreen(),
               '/salary-setup': (context) => const SalarySetupScreen(),
               '/dashboard': (context) => const MainDashboardScreen(),
+              '/profile': (context) => const ProfileScreen(),
             },
           );
         },
@@ -71,12 +83,9 @@ class ExpensioApp extends StatelessWidget {
       useMaterial3: true,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: const Color(0xFF0F172A),
-      cardTheme: CardThemeData(
-        color: const Color(0xFF1E293B),
+      cardTheme: const CardThemeData( // Changed from CardTheme to CardThemeData
+        color: Color(0xFF1E293B),
         elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
       ),
       appBarTheme: const AppBarTheme(
         backgroundColor: Color(0xFF0F172A),
@@ -87,26 +96,26 @@ class ExpensioApp extends StatelessWidget {
         backgroundColor: Color(0xFF10B981),
         foregroundColor: Colors.white,
       ),
-      inputDecorationTheme: InputDecorationTheme(
+      inputDecorationTheme: const InputDecorationTheme(
         filled: true,
-        fillColor: const Color(0xFF1E293B),
+        fillColor: Color(0xFF1E293B),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.all(Radius.circular(12)),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.all(Radius.circular(12)),
           borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF10B981), width: 2),
+          borderRadius: BorderRadius.all(Radius.circular(12)),
+          borderSide: BorderSide(color: Color(0xFF10B981), width: 2),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFEF4444), width: 2),
+          borderRadius: BorderRadius.all(Radius.circular(12)),
+          borderSide: BorderSide(color: Color(0xFFEF4444), width: 2),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       ),
     );
   }
@@ -122,14 +131,13 @@ class ExpensioApp extends StatelessWidget {
       error: const Color(0xFFEF4444),
       surface: Colors.white,
       onSurface: Colors.black87,
-      surfaceContainerHighest: const Color(0xFFF5F5F5),
     );
 
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: const Color(0xFFF8FAFC),
-      cardTheme: CardThemeData(
+      cardTheme: CardThemeData( // Changed from CardTheme to CardThemeData
         color: Colors.white,
         elevation: 2,
         shadowColor: Colors.black.withValues(alpha: 0.1),
@@ -172,13 +180,13 @@ class ExpensioApp extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: Colors.grey.shade300),
         ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF10B981), width: 2),
+        focusedBorder: const OutlineInputBorder(
+          borderRadius: BorderRadius.all(Radius.circular(12)),
+          borderSide: BorderSide(color: Color(0xFF10B981), width: 2),
         ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFEF4444), width: 2),
+        errorBorder: const OutlineInputBorder(
+          borderRadius: BorderRadius.all(Radius.circular(12)),
+          borderSide: BorderSide(color: Color(0xFFEF4444), width: 2),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       ),

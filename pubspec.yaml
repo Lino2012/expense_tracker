@@ -4,7 +4,8 @@ publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.0.0 <4.0.0'
+  sdk: '^3.11.0'  # Add this line - use your Dart SDK version
+
 dependencies:
   flutter:
     sdk: flutter
@@ -17,11 +18,20 @@ dependencies:
   intl: ^0.19.0
   animations: ^2.0.11
   
-  # Storage
-  shared_preferences: ^2.2.2
+  # Database
+  sqflite: ^2.3.2
+  sqflite_common_ffi: ^2.3.2
+  path: ^1.9.0
+  path_provider: ^2.1.2
+  
+  # Image Picker
+  image_picker: ^1.0.5
+  image_picker_windows: ^0.2.1  # For Windows support
   
   # Utilities
   uuid: ^4.3.3
+  shared_preferences: ^2.2.2
+  share_plus: ^7.2.1
 
 dev_dependencies:
   flutter_test:
@@ -34,21 +44,4 @@ flutter:
   
   assets:
     - assets/icon/
-
-flutter_launcher_icons:
-  android: true
-  ios: true
-  image_path: "assets/icon/icon.png"
-  min_sdk_android: 21
-  web:
-    generate: true
-    image_path: "assets/icon/icon.png"
-    background_color: "#0F172A"
-    theme_color: "#10B981"
-  windows:
-    generate: true
-    image_path: "assets/icon/icon.png"
-    icon_size: 48
-  macos:
-    generate: true
-    image_path: "assets/icon/icon.png"
+    - assets/images/  # For default avatar

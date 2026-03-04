@@ -9,6 +9,7 @@ import '../../widgets/currency_selector.dart';
 import '../../widgets/transaction_tile.dart';
 import '../../widgets/empty_state.dart';
 import '../analytics/yearly_analytics_screen.dart';
+import '../profile/profile_screen.dart';
 import 'add_transaction_sheet.dart';
 
 class MainDashboardScreen extends StatefulWidget {
@@ -89,9 +90,12 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Dashboard'),
+        title: const Text('Expensio'),
         actions: [
+          // Currency selector
           const CurrencySelector(),
+          
+          // Theme toggle
           Consumer<ThemeProvider>(
             builder: (context, themeProvider, child) {
               return IconButton(
@@ -108,6 +112,8 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
               );
             },
           ),
+          
+          // Analytics - ONCE
           IconButton(
             icon: const Icon(Icons.bar_chart),
             onPressed: () {
@@ -119,6 +125,21 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
               );
             },
           ),
+          
+          // Profile
+          IconButton(
+            icon: const Icon(Icons.person_outline),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ProfileScreen(),
+                ),
+              );
+            },
+          ),
+          
+          // Logout - ONCE
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () {
@@ -127,6 +148,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
               authProvider.logout(transactionProvider);
             },
           ),
+          
         ],
       ),
       body: RefreshIndicator(
@@ -143,7 +165,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
-                    // Balance Card - Wrap in Consumer to update when transactions change
+                    // Balance Card
                     Consumer<TransactionProvider>(
                       builder: (context, provider, child) {
                         return Container(
@@ -196,7 +218,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
                                   builder: (context, constraints) {
                                     return Row(
                                       children: [
-                                        // Monthly Salary Column
                                         Expanded(
                                           flex: 2,
                                           child: Column(
@@ -226,7 +247,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
                                           ),
                                         ),
                                         
-                                        // Vertical Divider
                                         Container(
                                           width: 1,
                                           height: 40,
@@ -234,13 +254,11 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
                                           color: Colors.white.withValues(alpha: 0.3),
                                         ),
                                         
-                                        // Income and Expense Row
                                         Expanded(
                                           flex: 3,
                                           child: Row(
                                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                             children: [
-                                              // Income Column
                                               Expanded(
                                                 child: _buildBalanceColumn(
                                                   context,
@@ -251,7 +269,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
                                                 ),
                                               ),
                                               const SizedBox(width: 8),
-                                              // Expense Column
                                               Expanded(
                                                 child: _buildBalanceColumn(
                                                   context,
@@ -276,7 +293,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
                     ),
                     const SizedBox(height: 24),
                     
-                    // Recent Transactions Header
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -287,18 +303,18 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
                                 color: isDark ? Colors.white : Colors.black87,
                               ),
                         ),
-                       TextButton(
-  onPressed: () {
-    // Navigate to all transactions view
-  },
-  child: Text(
-    'View All',
-    style: TextStyle(
-      color: colorScheme.primary,
-      fontWeight: FontWeight.w600,
-    ),
-  ),
-),
+                        TextButton(
+                          onPressed: () {
+                            // Navigate to all transactions view
+                          },
+                          child: Text(
+                            'View All',
+                            style: TextStyle(
+                              color: colorScheme.primary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 8),
@@ -307,7 +323,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
               ),
             ),
             
-            // Transaction List - Wrap in Consumer
             Consumer<TransactionProvider>(
               builder: (context, provider, child) {
                 if (provider.isLoading) {
@@ -334,7 +349,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
                       return TransactionTile(
                         transaction: transaction,
                         onDelete: () async {
-                          // Show confirmation dialog
                           final confirm = await showDialog<bool>(
                             context: context,
                             builder: (context) => AlertDialog(
@@ -392,7 +406,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
               builder: (context) => const AddTransactionSheet(),
             );
             
-            // If a transaction was added, show success and refresh
             if (result == true) {
               await transactionProvider.loadTransactions();
               if (context.mounted) {

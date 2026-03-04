@@ -90,7 +90,7 @@ class _SalarySetupScreenState extends State<SalarySetupScreen> with TickerProvid
 
     return Scaffold(
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
           child: Column(
             children: [

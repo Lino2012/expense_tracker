@@ -1,47 +1,39 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
-import '../models/app_models.dart';
-import '../services/storage_service.dart';
+import '../models/app_models.dart' as models; // Use alias
+import '../services/database_service.dart';
 import 'package:intl/intl.dart';
 
 class TransactionProvider extends ChangeNotifier {
-  List<Transaction> _transactions = [];
+  List<models.Transaction> _transactions = []; // Use models.Transaction
   bool _isLoading = false;
   String? _currentUserId;
   
   String? get currentUserId => _currentUserId;
-  List<Transaction> get transactions => _transactions;
+  List<models.Transaction> get transactions => _transactions; // Use models.Transaction
   bool get isLoading => _isLoading;
+
+  final DatabaseService _db = DatabaseService();
 
   TransactionProvider() {
     // Will be initialized when user logs in
   }
 
-  // Single initialize method
-Future<void> initialize(String userId) async {
-  debugPrint('📊 TransactionProvider - Initializing for user: $userId');
-  _currentUserId = userId;
-  debugPrint('📊 TransactionProvider - _currentUserId set to: $_currentUserId');
-  
-  // Ensure data consistency first
-  await StorageService.ensureDataConsistency(userId);
-  
-  // Migrate data if needed
-  await StorageService.migrateDataIfNeeded(userId);
-  
-  // Load transactions
-  await loadTransactions();
-  
-  // Verify data integrity
-  await verifyAndRepairData();
-  
-  debugPrint('📊 TransactionProvider - Initialization complete. Current user ID: $_currentUserId');
-}
+  Future<void> clear() async {
+    _transactions.clear();
+    _currentUserId = null;
+    notifyListeners();
+  }
 
-  // Single loadTransactions method
+  Future<void> initialize(String userId) async {
+    debugPrint('📊 TransactionProvider - Initializing for user: $userId');
+    _currentUserId = userId;
+    await loadTransactions();
+  }
+
   Future<void> loadTransactions() async {
     if (_currentUserId == null) {
-      debugPrint('Cannot load transactions: No user ID');
+      debugPrint('📊 Cannot load transactions: No user ID');
       return;
     }
     
@@ -49,12 +41,13 @@ Future<void> initialize(String userId) async {
     notifyListeners();
 
     try {
-      debugPrint('Loading transactions for user: $_currentUserId');
-      _transactions = await StorageService.getUserTransactions(_currentUserId!);
+      debugPrint('📊 Loading transactions for user: $_currentUserId');
+      final loadedTransactions = await _db.getTransactionsByUser(_currentUserId!);
+      _transactions = loadedTransactions; // Now properly typed
       _transactions.sort((a, b) => b.date.compareTo(a.date));
-      debugPrint('Loaded ${_transactions.length} transactions');
+      debugPrint('📊 Loaded ${_transactions.length} transactions');
     } catch (e) {
-      debugPrint('Error loading transactions: $e');
+      debugPrint('📊 Error loading transactions: $e');
       _transactions = [];
     }
     
@@ -62,27 +55,23 @@ Future<void> initialize(String userId) async {
     notifyListeners();
   }
 
-  Future<void> addTransaction(Transaction transaction) async {
+  Future<void> addTransaction(models.Transaction transaction) async {
     if (_currentUserId == null) {
-      debugPrint('Error: No current user ID');
+      debugPrint('📊 Error: No current user ID');
       return;
     }
     
     try {
-      debugPrint('Adding transaction for user: $_currentUserId');
-      debugPrint('Current transactions count before: ${_transactions.length}');
+      debugPrint('📊 Adding transaction for user: $_currentUserId');
       
+      await _db.createTransaction(transaction, _currentUserId!);
       _transactions.insert(0, transaction);
-      debugPrint('Transactions count after insert: ${_transactions.length}');
       
-      await StorageService.saveUserTransactions(_currentUserId!, _transactions);
-      debugPrint('Transactions saved to storage');
-      
+      debugPrint('📊 Transaction added successfully');
       notifyListeners();
-      debugPrint('UI notified of changes');
       
     } catch (e) {
-      debugPrint('Error adding transaction: $e');
+      debugPrint('📊 Error adding transaction: $e');
     }
   }
 
@@ -90,61 +79,50 @@ Future<void> initialize(String userId) async {
     if (_currentUserId == null) return;
     
     try {
+      await _db.deleteTransaction(id);
       _transactions.removeWhere((t) => t.id == id);
-      await StorageService.saveUserTransactions(_currentUserId!, _transactions);
       notifyListeners();
     } catch (e) {
-      debugPrint('Error deleting transaction: $e');
+      debugPrint('📊 Error deleting transaction: $e');
     }
   }
 
-  Future<void> updateTransaction(Transaction updatedTransaction) async {
+  Future<void> updateTransaction(models.Transaction updatedTransaction) async {
     if (_currentUserId == null) return;
     
     try {
+      await _db.updateTransaction(updatedTransaction);
       final index = _transactions.indexWhere((t) => t.id == updatedTransaction.id);
       if (index != -1) {
         _transactions[index] = updatedTransaction;
-        await StorageService.saveUserTransactions(_currentUserId!, _transactions);
         notifyListeners();
       }
     } catch (e) {
-      debugPrint('Error updating transaction: $e');
+      debugPrint('📊 Error updating transaction: $e');
     }
   }
 
-  // Add this method to check data integrity on startup
-  Future<void> verifyAndRepairData() async {
-    if (_currentUserId == null) return;
-    
-    final isValid = await StorageService.verifyDataIntegrity(_currentUserId!);
-    if (!isValid) {
-      debugPrint('TransactionProvider - Data integrity issue detected, attempting repair');
-      await loadTransactions(); // Reload from storage
-    }
-  }
-
+  // Analytics methods
   double get totalIncome {
     return _transactions
-        .where((t) => t.type == TransactionType.income)
+        .where((t) => t.type == models.TransactionType.income)
         .fold(0, (sum, t) => sum + t.amount);
   }
 
   double get totalExpense {
     return _transactions
-        .where((t) => t.type == TransactionType.expense)
+        .where((t) => t.type == models.TransactionType.expense)
         .fold(0, (sum, t) => sum + t.amount);
   }
 
   double get balance => totalIncome - totalExpense;
 
-  // Enhanced Analytics Methods
   Map<int, double> getMonthlyExpenses(int year) {
     final Map<int, double> monthlyExpenses = {};
     
     for (int month = 1; month <= 12; month++) {
       final expenses = _transactions.where((t) {
-        return t.type == TransactionType.expense &&
+        return t.type == models.TransactionType.expense &&
             t.date.year == year &&
             t.date.month == month;
       }).fold(0.0, (sum, t) => sum + t.amount);
@@ -160,7 +138,7 @@ Future<void> initialize(String userId) async {
     
     for (int month = 1; month <= 12; month++) {
       final income = _transactions.where((t) {
-        return t.type == TransactionType.income &&
+        return t.type == models.TransactionType.income &&
             t.date.year == year &&
             t.date.month == month;
       }).fold(0.0, (sum, t) => sum + t.amount);
@@ -175,7 +153,7 @@ Future<void> initialize(String userId) async {
     final Map<int, double> weeklyExpenses = {};
     
     final monthTransactions = _transactions.where((t) {
-      return t.type == TransactionType.expense &&
+      return t.type == models.TransactionType.expense &&
           t.date.year == year &&
           t.date.month == month;
     }).toList();
@@ -192,7 +170,7 @@ Future<void> initialize(String userId) async {
     final Map<String, double> categoryExpenses = {};
     
     final filteredTransactions = _transactions.where((t) {
-      if (t.type != TransactionType.expense) return false;
+      if (t.type != models.TransactionType.expense) return false;
       if (t.date.year != year) return false;
       if (month != null && t.date.month != month) return false;
       return true;
@@ -208,13 +186,13 @@ Future<void> initialize(String userId) async {
 
   double getYearlyIncome(int year) {
     return _transactions
-        .where((t) => t.type == TransactionType.income && t.date.year == year)
+        .where((t) => t.type == models.TransactionType.income && t.date.year == year)
         .fold(0, (sum, t) => sum + t.amount);
   }
 
   double getYearlyExpense(int year) {
     return _transactions
-        .where((t) => t.type == TransactionType.expense && t.date.year == year)
+        .where((t) => t.type == models.TransactionType.expense && t.date.year == year)
         .fold(0, (sum, t) => sum + t.amount);
   }
 
@@ -246,10 +224,4 @@ Future<void> initialize(String userId) async {
     final maxMonth = monthlyExpenses.entries.reduce((a, b) => a.value > b.value ? a : b).key;
     return DateFormat('MMMM').format(DateTime(year, maxMonth));
   }
-  // Add this method to manually set user ID if needed
-void setUserId(String userId) {
-  debugPrint('📊 TransactionProvider - Manually setting user ID to: $userId');
-  _currentUserId = userId;
-  loadTransactions();
-}
 }
