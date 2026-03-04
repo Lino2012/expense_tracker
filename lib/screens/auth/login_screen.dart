@@ -108,18 +108,21 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                 const SizedBox(height: 40),
                 // Logo and Title
                 Container(
-                  width: 100,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    color: colorScheme.primary.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.account_balance_wallet,
-                    size: 50,
-                    color: colorScheme.primary,
-                  ),
-                ),
+  width: 100,
+  height: 100,
+  decoration: BoxDecoration(
+    color: colorScheme.primary.withValues(alpha: 0.1),
+    shape: BoxShape.circle,
+  ),
+  child: ClipOval(
+    child: Image.asset(
+      'assets/icon/icon.png',
+      width: 60,
+      height: 60,
+      fit: BoxFit.cover,
+    ),
+  ),
+),
                 const SizedBox(height: 24),
                 Text(
                   'Welcome Back!',
