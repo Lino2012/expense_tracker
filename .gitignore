@@ -5,11 +5,17 @@
 *.swp
 .DS_Store
 .atom/
-.build/
 .buildlog/
 .history
 .svn/
-.swiftpm/
+.metadata
+*.iml
+*.ipr
+*.iws
+*.lock
+*.pid
+*.seed
+*.pid.lock
 migrate_working_dir/
 
 # IntelliJ related
@@ -18,20 +24,118 @@ migrate_working_dir/
 *.iws
 .idea/
 
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
-#.vscode/
+# The .vscode folder contains workspace configuration
+.vscode/
 
 # Flutter/Dart/Pub related
 **/doc/api/
-**/ios/Flutter/.last_build_id
 .dart_tool/
+.flutter-plugins
 .flutter-plugins-dependencies
+.packages
 .pub-cache/
 .pub/
 /build/
-/coverage/
+flutter_*.png
+linked_*.ds
+unlinked.ds
+unlinked_spec.ds
+
+# Android related
+**/android/**/gradle-wrapper.jar
+**/android/.gradle
+**/android/captures/
+**/android/gradlew
+**/android/gradlew.bat
+**/android/local.properties
+**/android/**/GeneratedPluginRegistrant.java
+**/android/key.properties
+*.jks
+
+# iOS related
+**/ios/**/Flutter/.last_build_id
+**/ios/**/Flutter/App.framework
+**/ios/**/Flutter/Flutter.framework
+**/ios/**/Flutter/Generated.xcconfig
+**/ios/**/Flutter/app.flx
+**/ios/**/Flutter/app.zip
+**/ios/**/Flutter/flutter_assets/
+**/ios/**/Flutter/flutter_export_environment.sh
+**/ios/**/ServiceDefinitions.json
+**/ios/**/Runner/GeneratedPluginRegistrant.*
+**/ios/**/Pods/
+**/ios/**/Podfile.lock
+**/ios/**/.symlinks/
+**/ios/**/Runner/FlutterApp.app
+
+# macOS related
+**/macos/**/Flutter/Generated.xcconfig
+**/macos/**/Flutter/ephemeral/
+**/macos/**/Flutter/flutter_export_environment.sh
+
+# Windows related
+**/windows/**/flutter/ephemeral/
+**/windows/**/flutter/ephemeral/cpp_client_wrapper/
+**/windows/**/flutter/ephemeral/flutter_export.h
+**/windows/**/flutter/ephemeral/flutter_messenger.h
+**/windows/**/flutter/ephemeral/flutter_plugin_registrar.h
+**/windows/**/flutter/ephemeral/flutter_windows.dll
+**/windows/**/flutter/ephemeral/flutter_windows.h
+**/windows/**/flutter/ephemeral/opus.dll
+**/windows/**/flutter/ephemeral/opus.pdb
+**/windows/**/flutter/ephemeral/win32.dll
+**/windows/**/flutter/ephemeral/win32.pdb
+**/windows/**/flutter/ephemeral/winpty.dll
+**/windows/**/flutter/ephemeral/winpty.pdb
+**/windows/**/flutter/ephemeral/zlib.dll
+**/windows/**/flutter/ephemeral/zlib.pdb
+**/windows/**/flutter/ephemeral/libflutter.dll
+**/windows/**/flutter/ephemeral/libflutter.pdb
+**/windows/runner/cmake-build/
+**/windows/runner/CMakeFiles/
+**/windows/runner/Testing/
+**/windows/runner/_deps/
+**/windows/out/
+**/windows/x64/
+**/windows/Runner.rc
+**/windows/CMakeCache.txt
+**/windows/CMakeFiles/
+**/windows/CMakeScripts/
+**/windows/cmake_install.cmake
+**/windows/CTestTestfile.cmake
+**/windows/Testing/
+**/windows/compile_commands.json
+
+# Linux related
+**/linux/flutter/ephemeral/
+**/linux/flutter/ephemeral/.plugin_symlinks/
+**/linux/CMakeCache.txt
+**/linux/CMakeFiles/
+**/linux/CMakeScripts/
+**/linux/cmake_install.cmake
+**/linux/CTestTestfile.cmake
+**/linux/Testing/
+**/linux/compile_commands.json
+**/linux/ephemeral/
+**/linux/runner/cmake-build/
+**/linux/runner/CMakeFiles/
+**/linux/runner/Testing/
+**/linux/runner/_deps/
+**/linux/out/
+
+# Web related
+**/web/index.html
+**/web/manifest.json
+**/web/icons/
+**/web/favicon.png
+
+# Coverage
+coverage/
+*.lcov
+*.info
+
+# Test related
+test/.test_combos.json
 
 # Symbolication related
 app.*.symbols
@@ -39,7 +143,52 @@ app.*.symbols
 # Obfuscation related
 app.*.map.json
 
-# Android Studio will place build artifacts here
-/android/app/debug
-/android/app/profile
-/android/app/release
+# Android Studio
+*.iml
+.idea/
+.gradle/
+local.properties
+captures/
+.externalNativeBuild
+.cxx/
+
+# VS Code
+.vscode/
+!.vscode/launch.json
+!.vscode/tasks.json
+
+# Flutter
+/pubspec.lock
+
+# macOS
+.DS_Store
+
+# IDE specific
+.project
+.classpath
+.settings/
+.factorypath
+*.launch
+
+# Gradle
+gradle-app.setting
+!gradle-wrapper.jar
+
+# Generated files
+*.gen.dart
+*.mocks.dart
+*.freezed.dart
+*.g.dart
+
+# Environment files
+*.env
+*.env.local
+*.env.production
+*.env.development
+
+# Secret files
+**/secrets.yaml
+**/secrets.json
+**/keys.dart
+**/credentials.json
+**/service-account.json
